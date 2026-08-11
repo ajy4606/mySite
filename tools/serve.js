@@ -62,4 +62,17 @@ http.createServer((req, res) => {
   console.log('  캐시 없음 — 파일 저장하고 새로고침하면 바로 반영됩니다.');
   console.log('  끄려면 Ctrl+C');
   console.log('');
+}).on('error', (err) => {
+  /* 포트가 이미 쓰이고 있을 때 기본 메시지는 "EADDRINUSE" 한 줄이라 무슨
+     뜻인지 알기 어렵습니다. 대개는 미리보기 창을 안 끄고 또 띄운 경우입니다. */
+  if(err.code === 'EADDRINUSE'){
+    console.log('');
+    console.log('  포트 ' + PORT + ' 는 이미 쓰이고 있습니다.');
+    console.log('  미리보기 창이 이미 떠 있지 않은지 확인해 보세요.');
+    console.log('  다른 번호로 띄우려면:');
+    console.log('    powershell -File tools\\serve.ps1 -Port ' + (PORT + 1));
+    console.log('');
+    process.exit(1);
+  }
+  throw err;
 });

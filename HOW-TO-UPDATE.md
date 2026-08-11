@@ -81,6 +81,12 @@ powershell -File tools\deploy.ps1 -All
 powershell -File tools\deploy.ps1 -SkipImages
 ```
 
+커밋 메시지를 직접 정하고 싶다면 (안 쓰면 날짜가 들어갑니다):
+
+```powershell
+powershell -File tools\deploy.ps1 -Message "황곡 신작 3점 추가"
+```
+
 ---
 
 ## 2. 눈으로 확인하기
@@ -94,6 +100,13 @@ powershell -File tools\serve.ps1
 
 > `index.html` 을 더블클릭해서 여는 건 안 됩니다.
 > 주소가 `file://` 로 시작하면 화면이 비어 보입니다. 반드시 위 명령으로 여세요.
+
+"포트가 이미 쓰이고 있습니다" 라고 나오면 미리보기 창이 이미 떠 있는 것입니다.
+그 창을 끄거나, 다른 번호로 띄우세요:
+
+```powershell
+powershell -File tools\serve.ps1 -Port 5174
+```
 
 새로고침해도 바뀐 게 안 보이면 **Ctrl + Shift + R** (강력 새로고침)을 눌러 보세요.
 

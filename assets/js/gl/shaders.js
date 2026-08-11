@@ -6,7 +6,9 @@
 
      0  DITHER   —                   ordered threshold → 1-bit (unused; was
                                      Hwanggok's before mode 7 replaced it)
-     1  MONO     Hwanggok_Colorized  the generated colour stripped back out
+     1  PEEL     Hwanggok_Colorized  the generated colour lifted off as a sheet
+                                     (modeMono below is the older version of
+                                     this slot — kept, no longer called)
      2  DATA     reserved            band displacement, channel split, quantise
      3  METAL    Full Metal Plant    the iron surface hardening
      4  PIXEL    —                   the sampling grid coarsening (unused;

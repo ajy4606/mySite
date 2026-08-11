@@ -4,8 +4,8 @@
 
 /* Bump this query whenever stack.js changes — assets are served with a
    one-hour cache and browsers will otherwise keep the old module. */
-import { createStack }  from './gl/stack.js?v=20260810-11';
-import { viewer }       from './gl/delaminate.js?v=20260810-11';
+import { createStack }  from './gl/stack.js?v=20260811-4';
+import { viewer }       from './gl/delaminate.js?v=20260811-4';
 
 const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -17,10 +17,10 @@ const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 /* Each series comes apart in its own language rather than every plate
    resolving into the same screen. Keep MODES, WORKS and the stage labels in
    delaminate.js in step if a series is added. */
-/* 0 dither · 1 mono · 2 data · 3 metal · 4 pixel · 5 none · 6 contour · 7 streak · 8 afterimage */
+/* 0 dither · 1 chroma peel · 2 data · 3 metal · 4 pixel · 5 none · 6 contour · 7 streak · 8 afterimage */
 const MODES = {
   'v-hwanggok':           7,   // streak — supersedes contour (mode 6, kept in shaders.js but unused)
-  'v-hwanggok-colorized': 1,   // mono
+  'v-hwanggok-colorized': 1,   // chroma peel — the generated colour lifts off the capture
   'v-midore':             8,   // afterimage — whole-image temporal layers, no RGB/pixel split
   'v-full-metal-plant':   3,   // metal
   'v-installation':       5    // none — documentation, left untouched

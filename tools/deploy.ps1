@@ -23,6 +23,13 @@ $ErrorActionPreference = 'Stop'
 $site = Split-Path -Parent $PSScriptRoot
 Set-Location $site
 
+# $LASTEXITCODE is undefined until a native command runs, and a PowerShell
+# script that ends without an explicit `exit` leaves it untouched. Both
+# build-images.ps1 and bump.ps1 do exactly that on success, so an unguarded
+# check would compare $null against 0, decide that failed, and abort a run
+# that had in fact worked. Start from a known value and treat $null as fine.
+$global:LASTEXITCODE = 0
+
 function Step([int]$Number, [string]$Text) {
   Write-Host ""
   Write-Host "  [$Number] $Text" -ForegroundColor Cyan
@@ -30,7 +37,8 @@ function Step([int]$Number, [string]$Text) {
 }
 
 function Stop-OnFailure([string]$Task) {
-  if ($LASTEXITCODE -ne 0) { throw "Failed during: $Task" }
+  if ($null -ne $LASTEXITCODE -and $LASTEXITCODE -ne 0) { throw "Failed during: $Task" }
+  $global:LASTEXITCODE = 0   # don't let one step's code leak into the next check
 }
 
 Write-Host ""
@@ -73,7 +81,28 @@ if (-not (Test-Path -LiteralPath (Join-Path $site '.git'))) {
   throw 'This is not a Git repository. Run tools\setup-git.ps1 first.'
 }
 
-git add -A
+# A crashed or interrupted Git leaves .git\index.lock behind, and every later
+# `git add` refuses to run until it is gone. The message Git gives is easy to
+# miss, so say plainly what happened and what to do.
+$indexLock = Join-Path $site '.git\index.lock'
+if (Test-Path -LiteralPath $indexLock) {
+  $age = (Get-Date) - (Get-Item -LiteralPath $indexLock).LastWriteTime
+  Write-Host '  A leftover Git lock file is blocking this commit.' -ForegroundColor Yellow
+  Write-Host ("  .git\index.lock  (created {0:N0} minutes ago)" -f $age.TotalMinutes)
+  Write-Host '  If no other Git program is running, remove it and try again:'
+  Write-Host '    Remove-Item .git\index.lock' -ForegroundColor Cyan
+  throw 'Git index is locked.'
+}
+
+# Git writes ordinary notices to stderr — "LF will be replaced by CRLF" is the
+# usual one on Windows. Under $ErrorActionPreference = 'Stop', PowerShell 5.1
+# promotes any stderr line from a native command into a TERMINATING error the
+# moment the output is redirected, so that harmless notice killed this script
+# immediately after staging, with no message and no commit. Exit codes are the
+# dependable signal for native commands, and Stop-OnFailure already reads them.
+$ErrorActionPreference = 'Continue'
+
+git add -A 2>&1 | Out-Null
 Stop-OnFailure 'git add'
 $staged = @(git diff --cached --name-only)
 if ($staged.Count -eq 0) {
@@ -88,7 +117,7 @@ $more = $staged.Count - 12
 if ($more -gt 0) { Write-Host "    ... and $more more" }
 
 if (-not $Message) { $Message = 'Site update ' + (Get-Date -Format 'yyyy-MM-dd HH:mm') }
-git commit -m $Message | Out-Null
+git commit -m $Message 2>&1 | Out-Null
 Stop-OnFailure 'git commit'
 Write-Host ""
 Write-Host "  Commit complete: $Message" -ForegroundColor Green
