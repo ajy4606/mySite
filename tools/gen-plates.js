@@ -1,0 +1,189 @@
+/* Fills the <div data-plates="slug"> containers in index.html from the
+   image manifest. Captions are lifted from the original filenames where the
+   artist put them there; everything else is left as a marked placeholder. */
+const fs = require('fs');
+const path = require('path');
+
+/* 폴더를 옮기거나 이름을 바꿔도 따라오도록, 이 스크립트 위치에서 거슬러 올라갑니다.
+   (예전에는 C:/Users/USER/Desktop/mySite 로 박아 두어서 폴더를 옮기면 멈췄습니다.) */
+const SITE = path.resolve(__dirname, '..');
+
+const manifestPath = path.join(SITE, 'assets/works/manifest.json');
+if(!fs.existsSync(manifestPath)){
+  console.error('\n  매니페스트가 없습니다: assets/works/manifest.json');
+  console.error('  먼저 이미지 처리를 돌리세요:  powershell -File tools\\build-images.ps1\n');
+  process.exit(1);
+}
+const manifest = JSON.parse(
+  fs.readFileSync(manifestPath, 'utf8').replace(/^\uFEFF/, '')
+);
+
+const TODO_WORK = '<span class="todo">매체 · 크기 입력</span>';
+
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const dim = s => s.replace(/(\d+)\s*[xX×]\s*(\d+)\s*cm/, '$1 × $2 cm');
+
+/* 파일 이름이 곧 캡션입니다. 형식은 네 시리즈 모두 같습니다:
+
+     제목, 크기, 매체, 연도.jpg
+
+   제목에 #번호가 있으면 시리즈 번호로, 없으면 개별 제목으로 읽습니다.
+     "Midore #21, 30x30cm, Archival Pigment Print, 2024"
+       → 《Midore》 #21, 2024 · Archival Pigment Print · 30 × 30 cm
+     "Aralia, 100x100cm, Sublimation transfer on metal plate, 2022"
+       → 《Aralia》, 2022 · Sublimation transfer on metal plate · 100 × 100 cm
+
+   캡션을 고치려면 index.html이 아니라 images/ 안의 파일 이름을 고치고
+   build-images.ps1 → gen-plates.js 를 다시 돌리세요. */
+function caption(orig){
+  const m = orig.replace(/(\.(jpe?g|png))+$/i, '')
+    .match(/^\s*(.+?)\s*,\s*([\dxX×\s]+cm)\s*,\s*([^,]+?)\s*,\s*(\d{4})\s*$/);
+  if(!m) return TODO_WORK;
+
+  const [, rawTitle, size, medium, year] = m;
+  const hash  = rawTitle.match(/^(.*?)\s*#\s*(\d+)$/);
+  const title = esc((hash ? hash[1] : rawTitle).trim());
+  const no    = hash ? ` #${hash[2]}` : '';
+  return `《${title}》${no}, ${year} · ${esc(medium)} · ${dim(size.replace(/\s+/g, ''))}`;
+}
+
+/* `num` is the plate's position on the page, which is not the file number
+   once the order has been arranged by hand. */
+function plate(item, cls, label, num){
+  const ar = (item.w / item.h).toFixed(4);
+  const n  = num || item.n;
+  const alt = `${item.project.replace(/-/g, ' ')} ${n}`;
+  /* --ar sits on the figure too: the Installation grid sizes its rows from it */
+  return `        <figure class="plate${cls ? ' ' + cls : ''} rv" style="--ar:${ar}">
+          <div class="strata" style="--ar:${ar}" data-src="${item.file}" data-orig="${esc(item.orig)}">
+            <img src="${item.file}" alt="${esc(alt)}" loading="lazy" width="${item.w}" height="${item.h}">
+          </div>
+          <span class="tag">⌖ Delaminate</span>
+          <figcaption><span>${caption(item.orig)}</span><span class="no">${label} ${n}</span></figcaption>
+        </figure>`;
+}
+
+/* rhythm for the single-column project pages */
+const CYCLE = ['plate--wide', 'pair', 'plate--right', 'plate--left', 'pair', 'plate--inset'];
+
+/* Pl. 번호는 파일 번호가 아니라 페이지에서의 자리입니다. 자리를 바꾸기 전에는
+   둘이 같았지만(파일 01이 첫 도판), PROJECT_ORDER로 순서를 바꾸면 갈라집니다.
+   전시 전경이 이미 자리 기준으로 매기고 있어서 작품 페이지도 같게 맞춥니다 —
+   그래야 Pl. 01, 02, 03 … 이 끊기지 않고 이어집니다. */
+function buildProject(items){
+  const out = [];
+  let i = 0, c = 0;
+  const pos = () => String(i + 1).padStart(2, '0');
+  while(i < items.length){
+    const step = CYCLE[c++ % CYCLE.length];
+    if(step === 'pair' && i + 1 < items.length){
+      out.push('        <div class="plate-pair">');
+      out.push(plate(items[i], '', 'Pl.', pos()).replace(/^/gm, '  ')); i++;
+      out.push(plate(items[i], '', 'Pl.', pos()).replace(/^/gm, '  ')); i++;
+      out.push('        </div>');
+    }else{
+      out.push(plate(items[i], step === 'pair' ? 'plate--inset' : step, 'Pl.', pos())); i++;
+    }
+  }
+  return out.join('\n');
+}
+
+/* 작품 페이지 안에서 손으로 맞춰 둔 자리.
+   기본은 작품 번호순인데, 그 순서가 아닌 자리에 두고 싶을 때만 여기에 적습니다.
+   여기 적은 것이 먼저, 나머지는 원래 순서대로 뒤에 붙습니다.
+
+   ⚠ index.html을 직접 고쳐서 자리를 바꾸면 다음 실행 때 지워집니다.
+      자리 바꾸기는 반드시 여기에 적어 두세요.
+
+   번호는 파일 번호(01, 02 …)가 아니라 작품 번호(#7, #35 …)로 씁니다.
+   파일 번호는 이미지를 하나 추가하면 전부 밀려서 바뀌지만, 작품 번호는
+   그대로라 이 목록이 깨지지 않습니다.
+
+   황곡: 《황곡》 #7을 맨 앞으로(#3과 맞바꿈), #36을 #35보다 앞으로. */
+const PROJECT_ORDER = {
+  'hwanggok': ['#7', '#6', '#3', '#9', '#21', '#22', '#25', '#34', '#36', '#35']
+};
+
+/* 원본 파일 이름 앞머리의 "… #7, 60x80cm, …" 에서 작품 번호를 읽습니다. */
+function workNo(item){
+  const m = String(item.orig || '').split(',')[0].match(/#\s*(\d+)\s*$/);
+  return m ? '#' + m[1] : null;
+}
+
+function applyOrder(slug, items){
+  const want = PROJECT_ORDER[slug];
+  if(!want) return items;
+
+  const byWork = new Map();
+  for(const x of items){ const w = workNo(x); if(w && !byWork.has(w)) byWork.set(w, x); }
+
+  const seen = new Set();
+  const seq  = [];
+  for(const w of want){
+    const hit = byWork.get(w);
+    if(hit){ seq.push(hit); seen.add(hit.n); }
+    else console.log(`  (자리 지정 ${w} — 그런 작품 번호가 없어 건너뜁니다)`);
+  }
+  for(const x of items){ if(!seen.has(x.n)) seq.push(x); }
+  return seq;
+}
+
+/* 전시 전경 순서 — www.ahnjaeyoung.com/installation 의 배열을 따릅니다.
+   포스터를 따로 모으지 않고 전시별로 사이사이 두는 것이 작가님 배열입니다
+   (포스터 → 그 전시의 전경). 여기 없는 번호는 뒤에 번호순으로 붙습니다.
+   새 이미지를 넣어 순서를 바꾸려면 이 배열만 고치세요. */
+const INSTALL_ORDER = [
+  '42','14','47','21','23','22','37','18','20','19','40','39','43',
+  '32','27','29','26','46','25','45','41','05'
+];
+
+function buildInstallation(items){
+  const byN  = new Map(items.map(x => [x.n, x]));
+  const seen = new Set();
+  const seq  = [];
+  for(const n of INSTALL_ORDER){ if(byN.has(n)){ seq.push(byN.get(n)); seen.add(n); } }
+  for(const x of items){ if(!seen.has(x.n)) seq.push(x); }
+  return seq.map((x, i) => plate(x, '', 'Fig.', String(i + 1).padStart(2, '0'))).join('\n');
+}
+
+/* 전시 전경은 순서와 캡션을 손으로 맞춰 둔 상태라 기본으로는 건드리지 않습니다.
+   전경을 다시 만들어야 할 때만:  node tools/gen-plates.js installation   */
+const only = process.argv.slice(2);
+const targets = only.length ? only : ['midore', 'full-metal-plant', 'hwanggok-colorized', 'hwanggok'];
+
+const byProject = {};
+manifest.forEach(m => { if(targets.includes(m.project)) (byProject[m.project] ||= []).push(m); });
+
+let html = fs.readFileSync(path.join(SITE, 'index.html'), 'utf8');
+let filled = 0;
+
+/* 컨테이너 안에는 이미 <div class="strata"> 같은 중첩 div가 들어 있습니다.
+   여는 태그부터 div를 세어 짝이 맞는 </div>를 찾아야 합니다 — 게으른 정규식으로
+   자르면 첫 번째 </div>에서 끊겨 마크업이 망가집니다. */
+function replaceContainer(src, slug, body){
+  const open = new RegExp(`<div class="(?:plates|inst)" data-plates="${slug}">`);
+  const m = open.exec(src);
+  if(!m) return null;
+
+  const from = m.index + m[0].length;
+  const tag  = /<div\b|<\/div>/g;
+  tag.lastIndex = from;
+  let depth = 1, hit;
+  while((hit = tag.exec(src))){
+    depth += hit[0] === '</div>' ? -1 : 1;
+    if(depth === 0) return src.slice(0, from) + '\n' + body + '\n      ' + src.slice(hit.index);
+  }
+  return null;
+}
+
+for(const [slug, items] of Object.entries(byProject)){
+  const body = slug === 'installation' ? buildInstallation(items) : buildProject(applyOrder(slug, items));
+  const next = replaceContainer(html, slug, body);
+  if(next === null){ console.log('!! no container for ' + slug); continue; }
+  html = next;
+  filled++;
+  console.log(`${slug}: ${items.length} plates`);
+}
+
+fs.writeFileSync(path.join(SITE, 'index.html'), html, 'utf8');
+console.log('containers filled: ' + filled);

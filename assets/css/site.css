@@ -1,0 +1,1037 @@
+/* ============================================================
+   Ahn Jaeyoung — site.css
+   Concept: LAYER / DELAMINATION
+   Ground is near-black; hierarchy is built from luminance only.
+   No radii, no shadows, no chroma in the UI — colour belongs to the work.
+   ============================================================ */
+
+/* ---------- 1. tokens ---------------------------------------------------- */
+:root{
+  /* ground */
+  --ground:      #0a0a0b;
+  --ground-lift: #101012;
+  --ground-deep: #060607;
+
+  /* ink */
+  --ink:   #eceae5;
+  --ink-2: #c5c5be;
+  --ink-3: #969691;
+  --ink-4: #7c7c78;
+
+  /* rules */
+  --line:        rgba(236,234,229,.11);
+  --line-soft:   rgba(236,234,229,.06);
+  --line-strong: rgba(236,234,229,.30);
+
+  /* type */
+  --sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+          "Apple SD Gothic Neo", "Segoe UI", Roboto, "Malgun Gothic",
+          "Noto Sans KR", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, "SF Mono",
+          Menlo, Consolas, "Liberation Mono", monospace;
+
+  /* metrics */
+  --m:    clamp(18px, 3.6vw, 56px);      /* page margin  */
+  --gap:  clamp(12px, 1.5vw, 24px);      /* grid gutter  */
+  --nav-h: 58px;
+  --max:  1680px;
+
+  /* motion */
+  --ease:      cubic-bezier(.16,1,.3,1);
+  --ease-io:   cubic-bezier(.62,.02,.16,1);
+  --t-fast: .28s;
+  --t-med:  .5s;
+  --t-slow: .9s;
+}
+
+/* ---------- 2. reset ----------------------------------------------------- */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{
+  -webkit-text-size-adjust:100%;
+  scroll-behavior:smooth;
+  background:var(--ground);
+}
+body{
+  background:var(--ground);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:15px;
+  line-height:1.7;
+  font-weight:350;
+  letter-spacing:-.005em;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  overflow-x:hidden;
+  font-feature-settings:"tnum" 0;
+}
+body.is-locked{overflow:hidden}
+
+/* Korean breaks between any two syllables by default, so a narrow column
+   splits 「가로지르는」 into 「가로지르 / 는」. keep-all holds words together and
+   breaks at spaces instead; break-word is the escape hatch for a token with
+   no space in it at all (an address, a long English name). */
+body{word-break:keep-all;overflow-wrap:break-word}
+
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+img{display:block;max-width:100%;height:auto}
+em{font-style:italic}
+::selection{background:var(--ink);color:var(--ground)}
+
+.sr{
+  position:absolute;width:1px;height:1px;overflow:hidden;
+  clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;
+}
+:focus-visible{outline:1px solid var(--ink);outline-offset:3px}
+
+/* ---------- 3. type utilities ------------------------------------------- */
+.mono{
+  font-family:var(--mono);
+  font-size:10.5px;
+  letter-spacing:.17em;
+  text-transform:uppercase;
+  font-weight:400;
+  line-height:1.5;
+}
+.mono-sm{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase}
+.label{color:var(--ink-3)}
+
+.display{
+  font-weight:250;
+  letter-spacing:-.035em;
+  line-height:.95;
+  font-size:clamp(2.6rem,7.4vw,6.4rem);
+}
+.h-sec{
+  font-weight:300;
+  letter-spacing:-.025em;
+  line-height:1.1;
+  font-size:clamp(1.5rem,3.2vw,2.6rem);
+}
+.kr-sub{
+  font-weight:300;
+  color:var(--ink-2);
+  letter-spacing:-.01em;
+  font-size:clamp(.95rem,1.5vw,1.15rem);
+}
+
+/* ---------- 4. layout ---------------------------------------------------- */
+.wrap{
+  width:100%;max-width:var(--max);margin:0 auto;
+  padding-left:var(--m);padding-right:var(--m);
+}
+.grid12{
+  display:grid;
+  grid-template-columns:repeat(12,minmax(0,1fr));
+  gap:var(--gap);
+}
+.rule{height:1px;background:var(--line);width:100%}
+
+/* ---------- 5. header ---------------------------------------------------- */
+.hdr{
+  position:fixed;inset:0 0 auto 0;z-index:80;
+  height:var(--nav-h);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 var(--m);
+  mix-blend-mode:difference;
+  pointer-events:none;
+}
+.hdr > *{pointer-events:auto}
+.hdr::after{
+  content:"";position:absolute;inset:auto 0 0 0;height:1px;
+  background:var(--line-soft);
+  opacity:0;transition:opacity var(--t-med) var(--ease);
+  mix-blend-mode:normal;
+}
+body.scrolled .hdr::after{opacity:1}
+
+/* Over the hero the difference blend is the point — the nav reads as another
+   layer on the stack. Over running text it is not: a 15.5px paragraph and a
+   10.5px mono label are too close in weight, and both become unreadable at
+   the moment they cross. Once the page has scrolled, the nav gets its own
+   ground back. The scrim is a gradient rather than a bar so the header still
+   has no edge of its own.
+
+   It sits on the header itself, not on a ::before — a pseudo-element at
+   z-index:-1 paints behind its parent's own background, and the header has
+   none, so it never showed. The header's children draw above it either way. */
+body.scrolled .hdr{
+  mix-blend-mode:normal;
+  background-image:linear-gradient(to bottom,
+    rgba(10,10,11,.96) 0%, rgba(10,10,11,.92) 58%, rgba(10,10,11,0) 100%);
+  backdrop-filter:saturate(130%) blur(7px);
+  -webkit-backdrop-filter:saturate(130%) blur(7px);
+}
+
+.wordmark{display:flex;align-items:baseline;gap:10px;line-height:1}
+.wordmark b{
+  font-family:var(--mono);font-size:11px;font-weight:500;
+  letter-spacing:.2em;text-transform:uppercase;
+}
+.wordmark span{font-size:11px;color:var(--ink-3);letter-spacing:.04em}
+
+.nav{display:flex;align-items:center;gap:clamp(18px,2.4vw,34px)}
+.nav a{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.17em;
+  text-transform:uppercase;color:var(--ink-3);
+  position:relative;padding:4px 0;
+  transition:color var(--t-fast) var(--ease);
+}
+.nav a::after{
+  content:"";position:absolute;left:0;right:0;bottom:0;height:1px;
+  background:currentColor;transform:scaleX(0);transform-origin:0 50%;
+  transition:transform var(--t-med) var(--ease);
+}
+.nav a:hover{color:var(--ink)}
+.nav a:hover::after,.nav a.on::after{transform:scaleX(1)}
+.nav a.on{color:var(--ink)}
+
+.burger{display:none;font-family:var(--mono);font-size:10.5px;letter-spacing:.17em;text-transform:uppercase}
+
+/* progress hairline */
+.prog{
+  position:fixed;top:0;left:0;height:1px;z-index:90;
+  background:var(--ink);width:0;
+  transition:opacity .3s var(--ease);
+}
+
+/* ---------- 6. main / view switching ------------------------------------ */
+main{min-height:100vh}
+.view{display:none}
+.view.active{display:block}
+.view.active > *{
+  animation:viewIn .62s var(--ease) both;
+}
+@keyframes viewIn{
+  from{opacity:0;transform:translate3d(0,14px,0)}
+  to  {opacity:1;transform:none}
+}
+body.is-leaving main{
+  opacity:0;transform:translate3d(0,-8px,0);
+  transition:opacity .22s var(--ease-io),transform .22s var(--ease-io);
+}
+
+/* ---------- 7. hero (webgl stack) --------------------------------------- */
+.hero{
+  position:relative;
+  height:100svh;min-height:600px;
+  width:100%;
+  overflow:hidden;
+  touch-action:pan-y;
+}
+.hero canvas{
+  position:absolute;inset:0;width:100%;height:100%;display:block;
+  opacity:0;transition:opacity 1.2s var(--ease);
+  touch-action:pan-y;
+}
+.hero.gl-ready canvas{opacity:1}
+
+/* static fallback: plain stacked prints, shown until webgl takes over */
+.hero-fallback{
+  position:absolute;inset:0;display:grid;place-items:center;
+  transition:opacity .8s var(--ease);
+}
+.hero.gl-ready .hero-fallback{opacity:0;pointer-events:none}
+.hero-fallback img{
+  position:absolute;width:min(46vw,520px);height:auto;
+  filter:grayscale(.15) brightness(.9);
+  transition:transform .9s var(--ease),opacity .9s var(--ease);
+}
+.hero-fallback img:nth-child(1){transform:translate(-26px,-18px) rotate(-1.4deg);opacity:.28}
+.hero-fallback img:nth-child(2){transform:translate(-13px,-9px) rotate(-.6deg);opacity:.5}
+.hero-fallback img:nth-child(3){transform:none;opacity:1}
+/* without webgl the stack still has to answer the cursor */
+.hero:hover .hero-fallback img:nth-child(1){transform:translate(-124px,-72px) rotate(-2.6deg);opacity:.5}
+.hero:hover .hero-fallback img:nth-child(2){transform:translate(-62px,-36px) rotate(-1.3deg);opacity:.78}
+
+.hero-ui{
+  position:absolute;inset:0;z-index:3;pointer-events:none;
+  padding:calc(var(--nav-h) + 24px) var(--m) 26px;
+  display:flex;flex-direction:column;justify-content:flex-end;
+}
+.hero-ui > *{pointer-events:auto}
+
+.hero-meta{
+  display:flex;align-items:flex-end;justify-content:space-between;
+  gap:24px;flex-wrap:wrap;
+}
+.hero-now{max-width:min(58ch,60vw)}
+.hero-now .idx{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;
+  color:var(--ink-3);display:block;margin-bottom:12px;
+}
+.hero-now .ttl{
+  font-weight:250;letter-spacing:-.03em;line-height:1;
+  font-size:clamp(2.1rem,5.6vw,4.6rem);
+  display:block;
+}
+.hero-now .sub{
+  display:block;margin-top:12px;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-2);
+}
+.hero-now .ttl,.hero-now .sub,.hero-now .idx{
+  transition:opacity .34s var(--ease),transform .34s var(--ease);
+}
+.hero-now.swapping .ttl,.hero-now.swapping .sub,.hero-now.swapping .idx{
+  opacity:0;transform:translateY(9px);
+}
+
+/* stack ticker */
+.hero-ticks{display:flex;gap:6px;align-items:flex-end}
+.hero-ticks button{
+  width:34px;height:2px;background:var(--line-strong);
+  transition:background var(--t-med) var(--ease),height var(--t-med) var(--ease);
+  position:relative;
+}
+.hero-ticks button::before{content:"";position:absolute;inset:-9px 0}
+.hero-ticks button.on{background:var(--ink);height:6px}
+.hero-ticks button:hover{background:var(--ink-2)}
+
+.hero-scroll{
+  position:absolute;right:var(--m);top:50%;transform:translateY(-50%) rotate(90deg);
+  transform-origin:100% 50%;
+  font-family:var(--mono);font-size:10px;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.hero-scroll-browse{display:none}
+.hero.is-wheel-ready .hero-scroll-idle{display:none}
+.hero.is-wheel-ready .hero-scroll-browse{display:inline}
+.hero-swipe,.hero-mobile-controls{display:none}
+
+/* ---------- 8. statement band ------------------------------------------- */
+.band{
+  padding:clamp(80px,11vw,170px) 0 clamp(70px,9vw,140px);
+  border-top:1px solid var(--line);
+}
+.band .grid12{align-items:start}
+.band .lbl{grid-column:1 / span 2}
+.band .body{grid-column:4 / span 7}
+.band .body p.kr{
+  font-size:clamp(1.15rem,2.15vw,1.85rem);
+  font-weight:250;line-height:1.5;letter-spacing:-.024em;
+  color:var(--ink);
+}
+.band .body p.en{
+  margin-top:28px;max-width:62ch;
+  font-size:14px;line-height:1.85;color:var(--ink-3);
+  letter-spacing:0;
+}
+
+/* ---------- 9. index ----------------------------------------------------- */
+.idx-head{
+  display:flex;align-items:baseline;justify-content:space-between;
+  padding-bottom:16px;border-bottom:1px solid var(--line);gap:20px;
+}
+.viewtog{display:flex;gap:2px}
+.viewtog button{
+  font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-3);padding:4px 9px;border:1px solid transparent;
+  transition:color var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease);
+}
+.viewtog button.on{color:var(--ink);border-color:var(--line)}
+.viewtog button:hover{color:var(--ink)}
+
+/* -- list mode -- */
+.idx-list{padding-bottom:clamp(70px,9vw,130px)}
+.row{
+  display:grid;
+  grid-template-columns:56px minmax(0,4.2fr) minmax(0,3.4fr) 120px 26px;
+  gap:var(--gap);align-items:baseline;
+  padding:clamp(20px,2.3vw,32px) 0;
+  border-bottom:1px solid var(--line);
+  position:relative;
+  transition:padding-left var(--t-med) var(--ease),opacity .5s var(--ease),filter .5s var(--ease);
+}
+.row::before{
+  content:"";position:absolute;inset:0 -14px;z-index:-1;
+  background:var(--ground-lift);opacity:0;
+  transition:opacity var(--t-med) var(--ease);
+}
+.row:hover{padding-left:16px}
+.row:hover::before{opacity:1}
+.row .n{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;color:var(--ink-4);padding-top:6px}
+.row:hover .n{color:var(--ink-2)}
+.row .t{
+  font-size:clamp(1.35rem,3vw,2.35rem);font-weight:250;
+  letter-spacing:-.03em;line-height:1.06;
+}
+.row .kr{color:var(--ink-3);font-size:14px;font-weight:300;letter-spacing:-.01em}
+.row .med{
+  font-family:var(--mono);font-size:10px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--ink-3);line-height:1.7;
+}
+.row .arw{
+  font-family:var(--mono);font-size:13px;color:var(--ink-4);justify-self:end;
+  transition:transform var(--t-med) var(--ease),color var(--t-med) var(--ease);
+}
+.row:hover .arw{transform:translateX(6px);color:var(--ink)}
+.row .thumb{display:none}
+
+/* cursor-follow preview */
+.peek{
+  position:fixed;top:0;left:0;z-index:60;pointer-events:none;
+  width:min(21vw,280px);
+  opacity:0;transform:translate3d(-50%,-50%,0) scale(.94);
+  transition:opacity .34s var(--ease),transform .5s var(--ease);
+  mix-blend-mode:normal;
+}
+.peek.on{opacity:1;transform:translate3d(-50%,-50%,0) scale(1)}
+.peek img{width:100%;height:auto;filter:grayscale(.1)}
+
+/* -- grid mode -- */
+.idx-grid{
+  display:grid;grid-template-columns:repeat(12,minmax(0,1fr));
+  gap:var(--gap) var(--gap);
+  padding:clamp(28px,3.5vw,52px) 0 clamp(70px,9vw,130px);
+}
+.card{
+  grid-column:span 4;display:block;position:relative;
+  transition:opacity .5s var(--ease),filter .5s var(--ease)
+}
+.card:nth-child(1),.card:nth-child(6){grid-column:span 5}
+.card:nth-child(2),.card:nth-child(5){grid-column:span 7}
+/* Hovering does not enlarge the plate — nothing on this site grows on
+   approach. The screen resolves over it and the registration frame lands,
+   the same two marks the full-size plates carry. */
+.card figure{
+  position:relative;overflow:hidden;background:var(--ground-lift);
+  isolation:isolate;
+}
+.card img{
+  width:100%;height:auto;display:block;
+  filter:grayscale(.16) brightness(.93);
+  transition:filter .55s var(--ease);
+}
+.card figure::before{
+  content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
+  background-image:radial-gradient(circle at 50% 50%, rgba(236,234,229,.9) 0 26%, transparent 27%);
+  background-size:6px 6px;
+  mix-blend-mode:screen;
+  opacity:0;transition:opacity .55s var(--ease);
+}
+.card figure::after{
+  content:"";position:absolute;inset:0;z-index:3;pointer-events:none;
+  border:1px solid var(--ink);
+  opacity:0;transition:opacity .4s var(--ease);
+}
+.card:hover img{filter:grayscale(0) brightness(1)}
+.card:hover figure::before{opacity:.10}
+.card:hover figure::after{opacity:.45}
+
+/* The two halves sit at opposite ends of the card. A long title in a narrow
+   card — 「Hwanggok_Colorized」 in a 5-column slot — left 14px between them and
+   folded the meta onto two lines while every other card had a clear span.
+   Letting the meta drop to its own line keeps the rhythm across the row. */
+.card .cap{
+  display:flex;justify-content:space-between;align-items:baseline;
+  flex-wrap:wrap;gap:2px 14px;padding-top:12px;
+}
+.card .cap b{
+  font-weight:300;font-size:16px;letter-spacing:-.02em;
+  transition:transform .5s var(--ease);
+}
+.card .cap span{
+  font-family:var(--mono);font-size:10px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--ink-3);
+  white-space:nowrap;
+  transition:color .4s var(--ease);
+}
+.card:hover .cap b{transform:translateX(9px)}
+.card:hover .cap span{color:var(--ink)}
+
+.hide{display:none !important}
+
+/* ---------- 10. project pages -------------------------------------------- */
+.p-head{
+  padding:calc(var(--nav-h) + clamp(56px,9vw,132px)) 0 clamp(38px,5vw,66px);
+}
+.p-head .n{font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;color:var(--ink-3);display:block;margin-bottom:clamp(18px,2.4vw,34px)}
+.p-head h1{margin-bottom:14px}
+.p-head .kr-sub{margin-bottom:22px}
+.p-head .meta{
+  display:flex;gap:clamp(18px,2.6vw,42px);flex-wrap:wrap;
+  padding-top:20px;border-top:1px solid var(--line);
+}
+.p-head .meta div{min-width:0}
+.p-head .meta dt{font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-4);margin-bottom:5px}
+.p-head .meta dd{font-family:var(--mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-2)}
+
+/* -- plates -- */
+.plates{padding-bottom:clamp(50px,7vw,110px)}
+.plate{
+  position:relative;
+  margin-bottom:clamp(46px,7vw,120px);
+}
+.plate--wide  {width:100%}
+.plate--inset {width:min(100%,72%);margin-left:auto;margin-right:auto}
+.plate--left  {width:min(100%,58%)}
+.plate--right {width:min(100%,52%);margin-left:auto}
+.plate--tall  {width:min(100%,44%);margin-left:auto;margin-right:auto}
+
+/* two plates read side by side — breaks the single column's monotony */
+.plate-pair{
+  display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);
+  align-items:start;margin-bottom:clamp(46px,7vw,120px);
+}
+.plate-pair .plate{margin-bottom:0;width:100%}
+
+/* delaminating image: 5 horizontal strata that converge as the plate centres */
+.strata{
+  position:relative;width:100%;
+  aspect-ratio:var(--ar,1.333);
+  background:var(--ground-lift);
+  overflow:hidden;
+  cursor:crosshair;
+  isolation:isolate;
+}
+.strata > img{
+  position:absolute;inset:0;z-index:1;
+  width:100%;height:100%;object-fit:cover;
+}
+.strata.split > img{opacity:0}
+/* Each band carries a full copy of the image inside it, offset upward by its
+   own share. Painting the image as a background *of the band* meant its size
+   was five times the band's height — so the 1px the bands overlap by to avoid
+   sub-pixel gaps also stretched the image, and every seam showed as a line.
+   Here the overlap is cancelled exactly:
+     band height  s = H/5 + 1
+     image height = 5s - 5 = H
+     image top    = -i·s + i = -i·H/5           */
+.strata i{
+  position:absolute;left:0;width:100%;z-index:2;
+  height:calc(20% + 1px);
+  top:calc(var(--i) * 20%);
+  overflow:hidden;
+  will-change:transform;
+  transform:translate3d(calc(var(--sep,0) * var(--dir) * 1px),0,0);
+}
+.strata i::before{
+  content:"";position:absolute;left:0;width:100%;
+  height:calc(500% - 5px);
+  top:calc(var(--i) * -100% + var(--i) * 1px);
+  background-image:var(--src);
+  background-size:100% 100%;
+  background-repeat:no-repeat;
+}
+/* each stratum drifts by its own amount — the sheet never shears evenly */
+.strata i:nth-of-type(1){--dir:-1.0}
+.strata i:nth-of-type(2){--dir: 2.3}
+.strata i:nth-of-type(3){--dir:-3.0}
+.strata i:nth-of-type(4){--dir: 1.4}
+.strata i:nth-of-type(5){--dir:-1.9}
+
+.strata::after{  /* registration frame on hover */
+  content:"";position:absolute;inset:0;z-index:4;
+  border:1px solid var(--ink);opacity:0;
+  transition:opacity var(--t-med) var(--ease);
+  pointer-events:none;
+}
+.strata:hover::after{opacity:.55}
+
+.plate .tag{
+  position:absolute;z-index:5;top:12px;left:12px;
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--ink);background:var(--ground-deep);
+  padding:5px 9px;
+  opacity:0;transform:translateY(-4px);
+  transition:opacity var(--t-med) var(--ease),transform var(--t-med) var(--ease);
+  pointer-events:none;
+}
+.plate:hover .tag{opacity:1;transform:none}
+
+.plate figcaption{
+  display:flex;justify-content:space-between;gap:20px;
+  padding-top:12px;
+  font-family:var(--mono);font-size:10px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.plate figcaption .no{color:var(--ink-4);flex:none}
+
+/* -- statement -- */
+.stmt{
+  border-top:1px solid var(--line);
+  padding:clamp(56px,7vw,110px) 0 clamp(56px,7vw,100px);
+}
+.stmt .lbl{grid-column:1 / span 2;position:sticky;top:calc(var(--nav-h) + 24px);align-self:start}
+.stmt .txt{grid-column:4 / span 7;max-width:66ch}
+.stmt p{margin-bottom:1.5em;font-size:15.5px;line-height:1.95;color:var(--ink-2)}
+.stmt p:first-child{color:var(--ink)}
+.stmt .quote{
+  border-left:1px solid var(--line-strong);padding-left:22px;
+  color:var(--ink);font-size:16px;line-height:1.9;margin-bottom:2.4em;
+}
+.stmt .quote cite{display:block;margin-top:14px;font-style:normal;font-family:var(--mono);font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-3)}
+.stmt h3{
+  font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--ink-4);font-weight:400;margin:3.4em 0 1.4em;
+  padding-top:1.4em;border-top:1px solid var(--line-soft);
+}
+.stmt .en p{font-size:14px;line-height:1.9;color:var(--ink-3);letter-spacing:0}
+
+.xlink{
+  display:inline-flex;align-items:baseline;gap:9px;
+  font-family:var(--mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--ink);border-bottom:1px solid var(--line-strong);
+  padding-bottom:3px;margin-top:6px;
+  transition:border-color var(--t-fast) var(--ease),gap var(--t-fast) var(--ease);
+}
+.xlink:hover{border-color:var(--ink);gap:14px}
+.xlink + .note{display:block;margin-top:14px;font-size:13px;color:var(--ink-3);line-height:1.75;max-width:52ch}
+
+/* -- pager -- */
+.pager{
+  border-top:1px solid var(--line);
+  display:grid;grid-template-columns:1fr 1fr;
+  min-height:clamp(120px,15vw,210px);
+}
+.pager a{
+  display:flex;flex-direction:column;justify-content:center;gap:10px;
+  padding:34px 0;
+}
+.pager a + a{border-left:1px solid var(--line);padding-left:clamp(20px,3vw,46px);align-items:flex-end;text-align:right}
+.pager .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-4)}
+.pager .v{
+  font-size:clamp(1.15rem,2.6vw,2rem);font-weight:250;letter-spacing:-.03em;
+  color:var(--ink-2);transition:color var(--t-med) var(--ease),transform var(--t-med) var(--ease);
+}
+.pager a:hover .v{color:var(--ink)}
+.pager a:first-child:hover .v{transform:translateX(-8px)}
+.pager a + a:hover .v{transform:translateX(8px)}
+
+/* ---------- 11. installation -------------------------------------------- */
+/* Justified rows. The sequence matters here — it follows the exhibitions —
+   so the plates have to read left to right. CSS columns filled the first
+   column top to bottom before starting the second, which scattered the
+   order down the page. Each plate grows in proportion to its aspect ratio,
+   so everything sharing a row lands on the same height with no crop. */
+.inst{
+  display:flex;flex-wrap:wrap;
+  gap:clamp(16px,1.8vw,28px);
+  padding-bottom:clamp(50px,7vw,110px);
+}
+.inst .plate{
+  margin:0;
+  flex-grow:calc(var(--ar,1.333) * 100);
+  flex-basis:calc(var(--ar,1.333) * 285px);
+  min-width:min(260px,100%);
+}
+/* only the plate number is left under an exhibition view, so it sits alone
+   on the right rather than stranded at the left of an empty row */
+.inst figcaption{justify-content:flex-end}
+/* the last row would otherwise stretch a lone plate across the full width */
+.inst::after{content:"";flex-grow:1e6;flex-basis:0}
+.inst-head{
+  border-top:1px solid var(--line);
+  margin-top:clamp(26px,4vw,52px);
+  padding:clamp(30px,4vw,58px) 0 clamp(18px,2.4vw,30px);
+}
+/* Exhibition views are documentation, not works — they are never taken
+   apart, so the strata never separate and the crosshair never appears. */
+.inst .strata{cursor:zoom-in}
+.inst .strata i{transform:none !important}
+
+/* ---------- 12. texts ---------------------------------------------------- */
+.txt-list{padding-bottom:clamp(70px,9vw,130px)}
+.txt-row{
+  display:grid;grid-template-columns:56px 200px minmax(0,1fr) 26px;
+  gap:var(--gap);align-items:start;
+  padding:clamp(24px,3vw,40px) 0;border-bottom:1px solid var(--line);
+  position:relative;transition:padding-left var(--t-med) var(--ease);
+}
+.txt-row:first-of-type{border-top:1px solid var(--line)}
+.txt-row:hover{padding-left:16px}
+.txt-row .n{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;color:var(--ink-4);padding-top:5px}
+.txt-row img{width:100%;filter:grayscale(.3) brightness(.8);transition:filter .6s var(--ease)}
+.txt-row:hover img{filter:none}
+.txt-row h2{font-size:clamp(1.15rem,2.1vw,1.6rem);font-weight:300;letter-spacing:-.025em;line-height:1.25;margin-bottom:9px}
+.txt-row .by{font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3)}
+.txt-row .ex{margin-top:16px;font-size:14px;color:var(--ink-3);line-height:1.85;max-width:60ch}
+.txt-row .arw{font-family:var(--mono);font-size:13px;color:var(--ink-4);justify-self:end;padding-top:4px;transition:transform var(--t-med) var(--ease),color var(--t-med) var(--ease)}
+.txt-row:hover .arw{transform:translateX(6px);color:var(--ink)}
+
+.essay{padding-bottom:clamp(80px,10vw,150px)}
+.essay .back{
+  display:inline-block;margin-bottom:clamp(34px,5vw,64px);
+  font-family:var(--mono);font-size:10px;letter-spacing:.17em;text-transform:uppercase;color:var(--ink-3);
+  transition:color var(--t-fast) var(--ease);
+}
+.essay .back:hover{color:var(--ink)}
+.essay .head{grid-column:1 / span 12;margin-bottom:clamp(40px,6vw,80px);max-width:22ch}
+.essay .head h1{font-size:clamp(1.7rem,4.2vw,3.1rem);font-weight:250;letter-spacing:-.032em;line-height:1.12;margin-bottom:18px;max-width:20ch}
+.essay .head .by{font-family:var(--mono);font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-2)}
+.essay .body{grid-column:4 / span 7;max-width:68ch}
+.essay .body p{margin-bottom:1.6em;font-size:15.5px;line-height:2.05;color:var(--ink-2)}
+.essay .body p:first-child{color:var(--ink-2)}
+.essay .notes{
+  margin-top:5em;padding-top:1.8em;border-top:1px solid var(--line);
+  counter-reset:fn;
+}
+.essay .notes p{font-size:12px;line-height:1.85;color:var(--ink-2);margin-bottom:.6em}
+
+/* ---------- 13. info / cv ------------------------------------------------ */
+.info-stmt{padding-bottom:clamp(56px,7vw,110px);border-bottom:1px solid var(--line)}
+.info-stmt .lbl{grid-column:1 / span 2}
+.info-stmt .txt{grid-column:4 / span 8;max-width:100ch}
+.info-stmt p.kr{font-size:clamp(1.05rem,1vw,1.5rem);font-weight:250;line-height:2;letter-spacing:-.022em}
+.info-stmt p.en{margin-top:26px;font-size:14px;line-height:1.9;color:var(--ink-3)}
+
+.cv{padding:clamp(56px,7vw,100px) 0 clamp(70px,9vw,130px)}
+.cv .col{grid-column:span 6}
+.cv .col:first-child{grid-column:1 / span 5}
+.cv .col:last-child{grid-column:7 / span 5}
+.cv .lang{
+  font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--ink-4);padding-bottom:14px;margin-bottom:26px;border-bottom:1px solid var(--line);
+}
+.cv h3{
+  font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:400;margin:38px 0 14px;
+}
+.cv h3:first-of-type{margin-top:0}
+.cv .r{
+  display:grid;grid-template-columns:50px minmax(0,1fr);gap:14px;
+  padding:6px 0;font-size:13.5px;line-height:1.65;color:var(--ink-2);
+}
+.cv .r .y{font-family:var(--mono);font-size:10.5px;color:var(--ink-4);padding-top:3px;font-variant-numeric:tabular-nums}
+
+.contact{
+  border-top:1px solid var(--line);
+  /* long-hand — this element also carries .wrap (see .threads-bar) */
+  padding-top:clamp(60px,8vw,120px);
+  padding-bottom:clamp(80px,10vw,150px);
+}
+/* The page ends here, so this block is centred rather than carrying the
+   left-hand label column the rest of the site uses — a full stop, not
+   another row of information. Three columns of equal width, held to a
+   readable measure so they stay together instead of drifting to the edges. */
+.contact .lbl{
+  text-align:center;
+  margin-bottom:clamp(34px,4.5vw,64px);
+  line-height:1.9;
+}
+.contact .links{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:clamp(20px,3vw,44px);
+  max-width:820px;margin:0 auto;
+}
+.contact .links div{
+  border-top:1px solid var(--line);
+  padding-top:16px;
+  text-align:center;
+}
+.contact .links dt{
+  font-family:var(--mono);font-size:10px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--ink-3);margin-bottom:10px;
+}
+.contact .links dd{font-size:16px;color:var(--ink);letter-spacing:-.01em}
+.todo{color:var(--ink-4)}
+
+/* ---------- 14. footer --------------------------------------------------- */
+.ftr{
+  border-top:1px solid var(--line);
+  padding:26px var(--m) 34px;
+  display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--ink-4);
+}
+
+/* ---------- 15. delaminate viewer --------------------------------------- */
+.dlm{
+  position:fixed;inset:0;z-index:100;
+  background:var(--ground-deep);
+  display:none;
+  opacity:0;transition:opacity .42s var(--ease);
+}
+.dlm.open{display:block}
+.dlm.shown{opacity:1}
+.dlm canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+
+.dlm-ui{position:absolute;inset:0;pointer-events:none;padding:var(--m);display:flex;flex-direction:column;justify-content:space-between}
+.dlm-ui > *{pointer-events:auto}
+.dlm-top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
+.dlm-cap{font-family:var(--mono);font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-2);max-width:52ch;line-height:1.8}
+.dlm-close{
+  font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--ink-3);transition:color var(--t-fast) var(--ease);
+  flex:none;white-space:nowrap;          /* narrow screens broke "Close ✕" in two */
+  padding:6px 0 6px 14px;min-height:44px;display:flex;align-items:center;
+}
+.dlm-close:hover{color:var(--ink)}
+
+.dlm-bot{display:flex;flex-direction:column;gap:16px;user-select:none}
+.dlm-stages{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line-soft)}
+.dlm-stages button{
+  background:var(--ground-deep);padding:11px 12px;text-align:left;
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--ink-4);transition:color var(--t-med) var(--ease),background var(--t-med) var(--ease);
+}
+.dlm-stages button.on{color:var(--ink);background:var(--ground-lift)}
+.dlm-stages button:hover{color:var(--ink-2)}
+.dlm-track{
+  position:relative;height:1px;background:var(--line);
+  cursor:ew-resize;touch-action:none;user-select:none;
+}
+/* the line itself is a hairline — the grabbable area is not */
+.dlm-track::before{
+  content:"";position:absolute;left:0;right:0;top:-18px;bottom:-18px;
+}
+.dlm-track:hover .knob,
+.dlm-track:active .knob{height:26px}
+.dlm-track .fill{position:absolute;inset:0 auto 0 0;background:var(--ink);width:0}
+.dlm-track .knob{
+  position:absolute;top:50%;left:0;width:1px;height:18px;background:var(--ink);
+  transform:translate(-50%,-50%);
+  transition:height var(--t-fast) var(--ease);
+  pointer-events:none;
+}
+.dlm-read{
+  display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap;
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-4);
+}
+.dlm-read .scale{color:var(--ink-3)}
+.dlm-read .hint{color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* a plain lightbox: nothing to scrub, so the scrubber goes away */
+.dlm.is-plain .dlm-track,
+.dlm.is-plain .dlm-stages,
+.dlm.is-plain .dlm-read .scale{display:none}
+.dlm.is-plain canvas{cursor:default}
+.dlm-nav{display:flex;gap:14px}
+.dlm-nav button{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3)}
+.dlm-nav button:hover{color:var(--ink)}
+.dlm-nav button[disabled]{color:var(--ink-4);cursor:default}
+.dlm.is-loading .dlm-read .hint{color:var(--ink-2)}
+
+/* ---------- 16. reveal on scroll ---------------------------------------- */
+.rv{opacity:0;transform:translate3d(0,26px,0)}
+.rv.in{opacity:1;transform:none;transition:opacity .95s var(--ease),transform .95s var(--ease)}
+.rv.in[data-d="1"]{transition-delay:.07s}
+.rv.in[data-d="2"]{transition-delay:.14s}
+.rv.in[data-d="3"]{transition-delay:.21s}
+
+/* ---------- 17. preloader ------------------------------------------------ */
+.pre{
+  position:fixed;inset:0;z-index:120;background:var(--ground);
+  display:flex;align-items:flex-end;justify-content:space-between;
+  padding:var(--m);
+  transition:opacity .7s var(--ease),visibility .7s;
+}
+.pre.done{opacity:0;visibility:hidden}
+.pre .n{font-family:var(--mono);font-size:clamp(2.4rem,9vw,6rem);letter-spacing:-.04em;color:var(--ink);line-height:.85;font-variant-numeric:tabular-nums}
+.pre .w{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);text-align:right;line-height:2}
+.pre .bar{position:absolute;left:var(--m);right:var(--m);bottom:calc(var(--m) + 96px);height:1px;background:var(--line)}
+.pre .bar i{position:absolute;inset:0 auto 0 0;background:var(--ink);width:0;transition:width .3s linear}
+
+/* ---------- 18. mobile menu --------------------------------------------- */
+.mmenu{
+  position:fixed;inset:0;z-index:75;background:var(--ground);
+  display:none;flex-direction:column;justify-content:center;gap:6px;
+  padding:var(--m);
+}
+.mmenu.open{display:flex}
+.mmenu a{
+  font-size:clamp(1.8rem,9vw,3rem);font-weight:250;letter-spacing:-.035em;
+  color:var(--ink-3);padding:8px 0;
+  opacity:0;transform:translateY(16px);
+  animation:mIn .6s var(--ease) forwards;
+}
+.mmenu a:nth-child(1){animation-delay:.04s}
+.mmenu a:nth-child(2){animation-delay:.09s}
+.mmenu a:nth-child(3){animation-delay:.14s}
+.mmenu a:nth-child(4){animation-delay:.19s}
+.mmenu a:nth-child(5){animation-delay:.24s}
+@keyframes mIn{to{opacity:1;transform:none}}
+.mmenu a.on{color:var(--ink)}
+
+/* ---------- 19. language ------------------------------------------------- */
+[data-lang="ko"] .l-en{display:none}
+[data-lang="en"] .l-ko{display:none}
+
+.lang-tog{display:inline-flex;align-items:center;gap:5px;margin-left:4px}
+.lang-tog button{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.17em;text-transform:uppercase;
+  color:var(--ink-4);padding:4px 0;transition:color var(--t-fast) var(--ease);
+}
+.lang-tog button.on{color:var(--ink)}
+.lang-tog button:hover{color:var(--ink-2)}
+.lang-tog i{font-style:normal;font-family:var(--mono);font-size:10px;color:var(--ink-4)}
+
+.ko-only{margin-top:16px;color:var(--ink-4);letter-spacing:.13em}
+
+/* ---------- 20. layer manifest ------------------------------------------
+   The works are made by stacking operations, so each one carries its stack
+   openly — read bottom-up, the way a layers panel is read. Approaching it
+   fans the rows apart, the same gesture the hero and the plates use.
+   ------------------------------------------------------------------------ */
+.layers{
+  border-top:1px solid var(--line);
+  padding:clamp(46px,6vw,88px) 0 clamp(44px,5.5vw,78px);
+}
+.layers .lbl{grid-column:1 / span 2}
+.layers .stack-wrap{grid-column:4 / span 6}
+
+.layer-stack{list-style:none}
+.layer-stack li{
+  display:grid;grid-template-columns:46px minmax(0,1.1fr) minmax(0,1fr);
+  gap:var(--gap);align-items:baseline;
+  padding:15px 0;border-top:1px solid var(--line-soft);
+  transition:transform .55s var(--ease),border-color .55s var(--ease);
+}
+.layer-stack li:first-child{border-top-color:var(--line)}
+.layer-stack li:last-child{border-bottom:1px solid var(--line)}
+.layer-stack:hover li{border-top-color:var(--line)}
+.layer-stack:hover li:nth-child(1){transform:translateX(21px)}
+.layer-stack:hover li:nth-child(2){transform:translateX(14px)}
+.layer-stack:hover li:nth-child(3){transform:translateX(7px)}
+.layer-stack .n{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;color:var(--ink-2)}
+.layer-stack .k{font-size:15.5px;font-weight:300;letter-spacing:-.015em}
+.layer-stack .e{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--ink-2);
+}
+.stack-note{color:var(--ink-3);margin-top:18px}
+
+/* ---------- 21. threads -------------------------------------------------- */
+.threads{display:flex;flex-wrap:wrap;gap:7px}
+.thread{
+  display:inline-flex;align-items:baseline;gap:9px;
+  font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-2);border:1px solid var(--line);padding:7px 12px;
+  transition:color var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease),
+             background var(--t-fast) var(--ease);
+}
+.thread:hover{color:var(--ink);border-color:var(--line-strong)}
+.thread-cue .thread-muted{opacity:.3;filter:grayscale(.7) brightness(.72)}
+.thread-cue .thread-related{opacity:1;filter:none}
+
+/* ---------- 22. residue --------------------------------------------------
+   A plate that has been taken apart is marked as seen — but only in the
+   index, never on the plate itself.
+
+   There used to be a faint 7px screen over any plate that had been opened
+   ("관람은 조용하지만 되돌릴 수 없는 변화를 예고한다"). It read as a defect in the
+   photograph rather than as a trace of reading, and after browsing a while it
+   was sitting on most of the page. Nothing goes on top of the work.
+   ------------------------------------------------------------------------ */
+.row.residue .n::after,
+.card.residue .cap b::after{
+  content:"";display:block;width:15px;height:15px;margin-top:9px;
+  background-image:radial-gradient(circle at 50% 50%, var(--ink-3) 0 27%, transparent 28%);
+  background-size:4px 4px;
+}
+.card.residue .cap b::after{margin-top:6px}
+
+/* ---------- 23. responsive ---------------------------------------------- */
+@media (max-width:1100px){
+  .band .body,.stmt .txt,.essay .body,.info-stmt .txt,
+  .layers .stack-wrap{grid-column:3 / span 10}
+  .band .lbl,.stmt .lbl,.info-stmt .lbl,.layers .lbl{grid-column:1 / span 2}
+  .cv .col:first-child{grid-column:1 / span 6}
+  .cv .col:last-child{grid-column:7 / span 6}
+  .plate--left,.plate--right,.plate--inset,.plate--tall{width:100%}
+}
+@media (max-width:820px){
+  :root{--nav-h:52px}
+  .nav{display:none}
+  .burger{display:block}
+  /* The difference blend keeps the wordmark legible over big flat images, but
+     over a dense block of Korean body text it turns to mush. Once the page has
+     scrolled, give the bar its own ground instead. */
+  body.scrolled .hdr{
+    mix-blend-mode:normal;
+    background:rgba(10,10,11,.88);
+    backdrop-filter:saturate(140%) blur(10px);
+    -webkit-backdrop-filter:saturate(140%) blur(10px);
+  }
+  /* thumbs, not cursors — the header controls were 11–26px tall */
+  .burger{min-height:44px;display:flex;align-items:center;padding-left:16px}
+  .wordmark{min-height:44px;align-items:center;padding-right:16px}
+  .lang-tog button{min-height:44px;display:flex;align-items:center;padding:0 4px}
+  .ftr a{display:inline-block;padding:6px 0}
+  .hero-scroll{display:none}
+  .hero-swipe{
+    display:block;position:absolute;left:var(--m);top:calc(var(--nav-h) + 18px);
+    font-family:var(--mono);font-size:10px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--ink-3);
+  }
+  .hero.no-gl .hero-swipe,.hero.no-gl .hero-mobile-controls{display:none}
+  .hero-meta{padding-bottom:60px}
+  .hero-mobile-controls{
+    position:absolute;left:var(--m);right:var(--m);bottom:22px;
+    display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;
+    font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  }
+  .hero-mobile-controls button{
+    min-width:88px;min-height:44px;border:1px solid var(--line-strong);
+    padding:0 14px;color:var(--ink-2);display:flex;align-items:center;gap:8px;
+  }
+  .hero-mobile-controls button:last-child{justify-self:end;justify-content:flex-end}
+  .hero-mobile-controls button:disabled{opacity:.28}
+  #hero-mobile-count{color:var(--ink-3);white-space:nowrap}
+  .hero-ticks{gap:0}
+  .hero-ticks button,.hero-ticks button.on{
+    width:44px;height:44px;background:transparent;
+  }
+  .hero-ticks button::before{
+    content:"";position:absolute;left:5px;right:5px;top:21px;height:2px;
+    background:var(--line-strong);
+  }
+  .hero-ticks button.on::before{top:19px;height:6px;background:var(--ink)}
+  .band .lbl,.stmt .lbl,.info-stmt .lbl,.layers .lbl{grid-column:1 / span 12;margin-bottom:20px}
+  .band .body,.stmt .txt,.essay .body,.essay .head,.info-stmt .txt,
+  .layers .stack-wrap{grid-column:1 / span 12}
+  /* three columns of contact detail get too narrow to read on a phone */
+  .contact .links{grid-template-columns:1fr;gap:26px;max-width:340px}
+  .mmenu-lang{margin-top:34px}
+  .mmenu-lang button{font-size:13px;letter-spacing:.2em}
+  .mmenu-lang i{font-size:13px}
+  .stmt .lbl{position:static}
+  .cv .col:first-child,.cv .col:last-child{grid-column:1 / span 12}
+  .cv .col:last-child{margin-top:56px}
+  .inst .plate{flex-basis:calc(var(--ar,1.333) * 230px);min-width:min(210px,100%)}
+  .card,.card:nth-child(n){grid-column:span 6}
+  .peek{display:none}
+}
+@media (max-width:640px){
+  body{font-size:14.5px}
+  .row{grid-template-columns:38px minmax(0,1fr) 20px;row-gap:6px}
+  .row .n{grid-row:1;padding-top:4px}
+  .row .t{grid-column:2;grid-row:1}
+  .row .kr{grid-column:2;grid-row:2}
+  .row .med{grid-column:2;grid-row:3;margin-top:6px}
+  .row .arw{grid-column:3;grid-row:1}
+  .row .thumb{display:block;grid-column:2;grid-row:4;margin-top:14px}
+  .row .thumb img{filter:grayscale(.15)}
+  .row:hover{padding-left:0}
+  .card,.card:nth-child(n){grid-column:span 12}
+  .txt-row{grid-template-columns:34px minmax(0,1fr) 20px}
+  .txt-row img{display:none}
+  .txt-row > div:nth-of-type(1){grid-column:2}
+  .pager{grid-template-columns:1fr}
+  .pager a + a{border-left:0;border-top:1px solid var(--line);padding-left:0;align-items:flex-start;text-align:left}
+  .dlm-stages{grid-template-columns:repeat(2,1fr)}
+  .plate figcaption{flex-direction:column;gap:5px}
+  .layer-stack li{grid-template-columns:34px minmax(0,1fr);row-gap:3px}
+  .layer-stack .n{grid-row:1}
+  .layer-stack .k{grid-column:2;grid-row:1}
+  .layer-stack .e{grid-column:2;grid-row:2}
+  .layer-stack:hover li:nth-child(n){transform:none}
+  .inst{display:block}
+  .inst .plate{margin:0 0 clamp(20px,4vw,34px)}
+  .plate-pair{grid-template-columns:1fr;gap:clamp(40px,7vw,90px)}
+}
+
+/* ---------- 20. reduced motion ------------------------------------------ */
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{
+    animation-duration:.01ms !important;animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;
+  }
+  .rv{opacity:1;transform:none}
+  .strata i{transform:none !important}
+  .layer-stack:hover li:nth-child(n){transform:none}
+  .strata.residue::before{animation:none;opacity:.075}
+}

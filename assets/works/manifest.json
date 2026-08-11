@@ -1,0 +1,974 @@
+﻿[
+    {
+        "project":  "midore",
+        "n":  "01",
+        "file":  "assets/works/midore/01.jpg",
+        "thumb":  "assets/works/midore/01-sm.jpg",
+        "orig":  "Midore #1, 82x82cm, Archival Pigment Print, 2024.jpg",
+        "w":  1600,
+        "h":  1600
+    },
+    {
+        "project":  "midore",
+        "n":  "02",
+        "file":  "assets/works/midore/02.jpg",
+        "thumb":  "assets/works/midore/02-sm.jpg",
+        "orig":  "Midore #2, 82x82cm, Archival Pigment Print, 2024.jpg",
+        "w":  1600,
+        "h":  1600
+    },
+    {
+        "project":  "midore",
+        "n":  "03",
+        "file":  "assets/works/midore/03.jpg",
+        "thumb":  "assets/works/midore/03-sm.jpg",
+        "orig":  "Midore #3, 40x40cm, Archival Pigment Print, 2024.jpg",
+        "w":  1600,
+        "h":  1600
+    },
+    {
+        "project":  "midore",
+        "n":  "04",
+        "file":  "assets/works/midore/04.jpg",
+        "thumb":  "assets/works/midore/04-sm.jpg",
+        "orig":  "Midore #4, 40x40cm, Archival Pigment Print, 2025.jpg",
+        "w":  1600,
+        "h":  1600
+    },
+    {
+        "project":  "midore",
+        "n":  "05",
+        "file":  "assets/works/midore/05.jpg",
+        "thumb":  "assets/works/midore/05-sm.jpg",
+        "orig":  "Midore #5, 40x40cm, Archival Pigment Print, 2024.jpg",
+        "w":  1600,
+        "h":  1600
+    },
+    {
+        "project":  "midore",
+        "n":  "06",
+        "file":  "assets/works/midore/06.jpg",
+        "thumb":  "assets/works/midore/06-sm.jpg",
+        "orig":  "Midore #6, 40x40cm, Archival Pigment Print, 2024.jpg",
+        "w":  1600,
+        "h":  1600
+    },
+    {
+        "project":  "midore",
+        "n":  "07",
+        "file":  "assets/works/midore/07.jpg",
+        "thumb":  "assets/works/midore/07-sm.jpg",
+        "orig":  "Midore #7, 20x20cm, Archival Pigment Print, 2024.jpg",
+        "w":  1600,
+        "h":  1600
+    },
+    {
+        "project":  "midore",
+        "n":  "08",
+        "file":  "assets/works/midore/08.jpg",
+        "thumb":  "assets/works/midore/08-sm.jpg",
+        "orig":  "Midore #8, 60x42cm, Archival Pigment Print, 2025.jpg",
+        "w":  1199,
+        "h":  1600
+    },
+    {
+        "project":  "midore",
+        "n":  "09",
+        "file":  "assets/works/midore/09.jpg",
+        "thumb":  "assets/works/midore/09-sm.jpg",
+        "orig":  "Midore #9, 60x80cm, Archival Pigment Print, 2025.jpg",
+        "w":  1600,
+        "h":  1199
+    },
+    {
+        "project":  "midore",
+        "n":  "10",
+        "file":  "assets/works/midore/10.jpg",
+        "thumb":  "assets/works/midore/10-sm.jpg",
+        "orig":  "Midore #11, 40x40cm, Archival Pigment Print, 2025.jpg",
+        "w":  1600,
+        "h":  1600
+    },
+    {
+        "project":  "midore",
+        "n":  "11",
+        "file":  "assets/works/midore/11.jpg",
+        "thumb":  "assets/works/midore/11-sm.jpg",
+        "orig":  "Midore #12, 45x60cm, Archival Pigment Print, 2025.jpg",
+        "w":  1600,
+        "h":  1199
+    },
+    {
+        "project":  "midore",
+        "n":  "12",
+        "file":  "assets/works/midore/12.jpg",
+        "thumb":  "assets/works/midore/12-sm.jpg",
+        "orig":  "Midore #13, 80x120cm, Archival Pigment Print, 2024.jpg",
+        "w":  1600,
+        "h":  1199
+    },
+    {
+        "project":  "midore",
+        "n":  "13",
+        "file":  "assets/works/midore/13.jpg",
+        "thumb":  "assets/works/midore/13-sm.jpg",
+        "orig":  "Midore #14, 60x80cm, Archival Pigment Print, 2025.jpg",
+        "w":  1600,
+        "h":  1199
+    },
+    {
+        "project":  "midore",
+        "n":  "14",
+        "file":  "assets/works/midore/14.jpg",
+        "thumb":  "assets/works/midore/14-sm.jpg",
+        "orig":  "Midore #18, 45x60cm, Archival Pigment Print, 2025.jpg",
+        "w":  1600,
+        "h":  1199
+    },
+    {
+        "project":  "midore",
+        "n":  "15",
+        "file":  "assets/works/midore/15.jpg",
+        "thumb":  "assets/works/midore/15-sm.jpg",
+        "orig":  "Midore #19, 60x80cm, Archival Pigment Print, 2025.jpg",
+        "w":  1600,
+        "h":  1199
+    },
+    {
+        "project":  "midore",
+        "n":  "16",
+        "file":  "assets/works/midore/16.jpg",
+        "thumb":  "assets/works/midore/16-sm.jpg",
+        "orig":  "Midore #20, 70x49cm, Archival Pigment Print, 2025.jpg",
+        "w":  1117,
+        "h":  1600
+    },
+    {
+        "project":  "midore",
+        "n":  "17",
+        "file":  "assets/works/midore/17.jpg",
+        "thumb":  "assets/works/midore/17-sm.jpg",
+        "orig":  "Midore #23, 95x127cm, Archival Pigment Print, 2024.jpg",
+        "w":  1600,
+        "h":  1199
+    },
+    {
+        "project":  "midore",
+        "n":  "18",
+        "file":  "assets/works/midore/18.jpg",
+        "thumb":  "assets/works/midore/18-sm.jpg",
+        "orig":  "Midore #22, 40x40cm, Archival Pigment Print, 2023.jpg",
+        "w":  1600,
+        "h":  1600
+    },
+    {
+        "project":  "midore",
+        "n":  "19",
+        "file":  "assets/works/midore/19.jpg",
+        "thumb":  "assets/works/midore/19-sm.jpg",
+        "orig":  "Midore #21, 30x30cm, Archival Pigment Print, 2024.jpg",
+        "w":  1600,
+        "h":  1600
+    },
+    {
+        "project":  "midore",
+        "n":  "20",
+        "file":  "assets/works/midore/20.jpg",
+        "thumb":  "assets/works/midore/20-sm.jpg",
+        "orig":  "Midore #24, 95x127cm, Archival Pigment Print, 2025.jpg",
+        "w":  1600,
+        "h":  1199
+    },
+    {
+        "project":  "full-metal-plant",
+        "n":  "01",
+        "file":  "assets/works/full-metal-plant/01.jpg",
+        "thumb":  "assets/works/full-metal-plant/01-sm.jpg",
+        "orig":  "Full Metal Plant#1, 100x100cm, Sublimation transfer on metal plate, 2022.jpg",
+        "w":  1600,
+        "h":  1600
+    },
+    {
+        "project":  "full-metal-plant",
+        "n":  "02",
+        "file":  "assets/works/full-metal-plant/02.jpg",
+        "thumb":  "assets/works/full-metal-plant/02-sm.jpg",
+        "orig":  "Full Metal Plant#2, 100x100cm, Sublimation transfer on metal plate, 2022.jpg",
+        "w":  1600,
+        "h":  1600
+    },
+    {
+        "project":  "full-metal-plant",
+        "n":  "03",
+        "file":  "assets/works/full-metal-plant/03.jpg",
+        "thumb":  "assets/works/full-metal-plant/03-sm.jpg",
+        "orig":  "Full Metal Plant#3, 100x100cm, Sublimation transfer on metal plate, 2022.jpg",
+        "w":  1600,
+        "h":  1600
+    },
+    {
+        "project":  "full-metal-plant",
+        "n":  "04",
+        "file":  "assets/works/full-metal-plant/04.jpg",
+        "thumb":  "assets/works/full-metal-plant/04-sm.jpg",
+        "orig":  "Full Metal Plant#4, 100x100cm, Sublimation transfer on metal plate, 2022.jpg",
+        "w":  1600,
+        "h":  1600
+    },
+    {
+        "project":  "full-metal-plant",
+        "n":  "05",
+        "file":  "assets/works/full-metal-plant/05.jpg",
+        "thumb":  "assets/works/full-metal-plant/05-sm.jpg",
+        "orig":  "Full Metal Plant#5, 100x100cm, Sublimation transfer on metal plate, 2022.jpg",
+        "w":  1600,
+        "h":  1600
+    },
+    {
+        "project":  "full-metal-plant",
+        "n":  "06",
+        "file":  "assets/works/full-metal-plant/06.jpg",
+        "thumb":  "assets/works/full-metal-plant/06-sm.jpg",
+        "orig":  "Full Metal Plant#6, 100x100cm, Sublimation transfer on metal plate, 2022.jpg",
+        "w":  1600,
+        "h":  1600
+    },
+    {
+        "project":  "full-metal-plant",
+        "n":  "07",
+        "file":  "assets/works/full-metal-plant/07.jpg",
+        "thumb":  "assets/works/full-metal-plant/07-sm.jpg",
+        "orig":  "Aralia, 100x100cm, Sublimation transfer on metal plate, 2022.jpg",
+        "w":  1600,
+        "h":  1600
+    },
+    {
+        "project":  "full-metal-plant",
+        "n":  "08",
+        "file":  "assets/works/full-metal-plant/08.jpg",
+        "thumb":  "assets/works/full-metal-plant/08-sm.jpg",
+        "orig":  "Companion Plant #1, 100x75cm, Archival Pigment Print, 2022.jpg",
+        "w":  1199,
+        "h":  1600
+    },
+    {
+        "project":  "full-metal-plant",
+        "n":  "09",
+        "file":  "assets/works/full-metal-plant/09.jpg",
+        "thumb":  "assets/works/full-metal-plant/09-sm.jpg",
+        "orig":  "Companion Plant #2, 100x75cm, Archival Pigment Print, 2022.jpg",
+        "w":  1199,
+        "h":  1600
+    },
+    {
+        "project":  "full-metal-plant",
+        "n":  "10",
+        "file":  "assets/works/full-metal-plant/10.jpg",
+        "thumb":  "assets/works/full-metal-plant/10-sm.jpg",
+        "orig":  "Davana, 100x100cm, Sublimation transfer on metal plate, 2022.jpg",
+        "w":  1600,
+        "h":  1600
+    },
+    {
+        "project":  "full-metal-plant",
+        "n":  "11",
+        "file":  "assets/works/full-metal-plant/11.jpg",
+        "thumb":  "assets/works/full-metal-plant/11-sm.jpg",
+        "orig":  "Miniature African Violet, 100x100cm, Sublimation transfer on metal plate, 2022.jpg",
+        "w":  1600,
+        "h":  1600
+    },
+    {
+        "project":  "full-metal-plant",
+        "n":  "12",
+        "file":  "assets/works/full-metal-plant/12.jpg",
+        "thumb":  "assets/works/full-metal-plant/12-sm.jpg",
+        "orig":  "Staghorn Fern, 100x100cm, Sublimation transfer on metal plate, 2022.jpg",
+        "w":  1600,
+        "h":  1600
+    },
+    {
+        "project":  "full-metal-plant",
+        "n":  "13",
+        "file":  "assets/works/full-metal-plant/13.jpg",
+        "thumb":  "assets/works/full-metal-plant/13-sm.jpg",
+        "orig":  "Tradescantia Nanouk, 100x100cm, Sublimation transfer on metal plate, 2022.jpg",
+        "w":  1600,
+        "h":  1600
+    },
+    {
+        "project":  "hwanggok-colorized",
+        "n":  "01",
+        "file":  "assets/works/hwanggok-colorized/01.jpg",
+        "thumb":  "assets/works/hwanggok-colorized/01-sm.jpg",
+        "orig":  "Hwanggok_Colorized #1, 90x120cm, Archival Pigment Print, 2021.jpg",
+        "w":  1600,
+        "h":  1200
+    },
+    {
+        "project":  "hwanggok-colorized",
+        "n":  "02",
+        "file":  "assets/works/hwanggok-colorized/02.jpg",
+        "thumb":  "assets/works/hwanggok-colorized/02-sm.jpg",
+        "orig":  "Hwanggok_Colorized #3, 90x120cm, Archival Pigment Print, 2021.jpg",
+        "w":  1600,
+        "h":  1199
+    },
+    {
+        "project":  "hwanggok-colorized",
+        "n":  "03",
+        "file":  "assets/works/hwanggok-colorized/03.jpg",
+        "thumb":  "assets/works/hwanggok-colorized/03-sm.jpg",
+        "orig":  "Hwanggok_Colorized #9, 90x120cm, Archival Pigment Print, 2021.jpg",
+        "w":  1600,
+        "h":  1200
+    },
+    {
+        "project":  "hwanggok-colorized",
+        "n":  "04",
+        "file":  "assets/works/hwanggok-colorized/04.jpg",
+        "thumb":  "assets/works/hwanggok-colorized/04-sm.jpg",
+        "orig":  "Hwanggok_Colorized #10, 40x53cm, Archival Pigment Print, 2021.jpg",
+        "w":  1600,
+        "h":  1199
+    },
+    {
+        "project":  "hwanggok-colorized",
+        "n":  "05",
+        "file":  "assets/works/hwanggok-colorized/05.jpg",
+        "thumb":  "assets/works/hwanggok-colorized/05-sm.jpg",
+        "orig":  "Hwanggok_Colorized #11, 60x80cm, Archival Pigment Print, 2021.jpg",
+        "w":  1600,
+        "h":  1199
+    },
+    {
+        "project":  "hwanggok-colorized",
+        "n":  "06",
+        "file":  "assets/works/hwanggok-colorized/06.jpg",
+        "thumb":  "assets/works/hwanggok-colorized/06-sm.jpg",
+        "orig":  "Hwanggok_Colorized #31, 40x53cm, Archival Pigment Print, 2021.jpg",
+        "w":  1600,
+        "h":  1199
+    },
+    {
+        "project":  "hwanggok-colorized",
+        "n":  "07",
+        "file":  "assets/works/hwanggok-colorized/07.jpg",
+        "thumb":  "assets/works/hwanggok-colorized/07-sm.jpg",
+        "orig":  "Hwanggok_Colorized #42, 40x53cm, Archival Pigment Print, 2022.jpg",
+        "w":  1600,
+        "h":  1199
+    },
+    {
+        "project":  "hwanggok-colorized",
+        "n":  "08",
+        "file":  "assets/works/hwanggok-colorized/08.jpg",
+        "thumb":  "assets/works/hwanggok-colorized/08-sm.jpg",
+        "orig":  "Hwanggok_Colorized #48, 60x80cm, Archival Pigment Print, 2023.jpg",
+        "w":  1600,
+        "h":  1199
+    },
+    {
+        "project":  "hwanggok-colorized",
+        "n":  "09",
+        "file":  "assets/works/hwanggok-colorized/09.jpg",
+        "thumb":  "assets/works/hwanggok-colorized/09-sm.jpg",
+        "orig":  "Hwanggok_Colorized #66, 90x120cm, Archival Pigment Print, 2021.jpg",
+        "w":  1600,
+        "h":  1200
+    },
+    {
+        "project":  "hwanggok-colorized",
+        "n":  "10",
+        "file":  "assets/works/hwanggok-colorized/10.jpg",
+        "thumb":  "assets/works/hwanggok-colorized/10-sm.jpg",
+        "orig":  "Hwanggok_Colorized #68, 90x120cm, Archival Pigment Print, 2021.jpg",
+        "w":  1600,
+        "h":  1200
+    },
+    {
+        "project":  "hwanggok",
+        "n":  "01",
+        "file":  "assets/works/hwanggok/01.jpg",
+        "thumb":  "assets/works/hwanggok/01-sm.jpg",
+        "orig":  "Hwanggok #3, 60x80cm, Archival Pigment Print, 2021.jpg",
+        "w":  1600,
+        "h":  1199
+    },
+    {
+        "project":  "hwanggok",
+        "n":  "02",
+        "file":  "assets/works/hwanggok/02.jpg",
+        "thumb":  "assets/works/hwanggok/02-sm.jpg",
+        "orig":  "Hwanggok #6, 60x80cm, Archival Pigment Print, 2021.jpg",
+        "w":  1600,
+        "h":  1199
+    },
+    {
+        "project":  "hwanggok",
+        "n":  "03",
+        "file":  "assets/works/hwanggok/03.jpg",
+        "thumb":  "assets/works/hwanggok/03-sm.jpg",
+        "orig":  "Hwanggok #7, 60x80cm, Archival Pigment Print, 2021.jpg",
+        "w":  1600,
+        "h":  1199
+    },
+    {
+        "project":  "hwanggok",
+        "n":  "04",
+        "file":  "assets/works/hwanggok/04.jpg",
+        "thumb":  "assets/works/hwanggok/04-sm.jpg",
+        "orig":  "Hwanggok #9, 100x133cm, Archival Pigment Print, 2021.jpg",
+        "w":  1600,
+        "h":  1200
+    },
+    {
+        "project":  "hwanggok",
+        "n":  "05",
+        "file":  "assets/works/hwanggok/05.jpg",
+        "thumb":  "assets/works/hwanggok/05-sm.jpg",
+        "orig":  "Hwanggok #21, 100x133cm, Archival Pigment Print, 2021.jpg",
+        "w":  1600,
+        "h":  1199
+    },
+    {
+        "project":  "hwanggok",
+        "n":  "06",
+        "file":  "assets/works/hwanggok/06.jpg",
+        "thumb":  "assets/works/hwanggok/06-sm.jpg",
+        "orig":  "Hwanggok #22, 40x53cm, Archival Pigment Print, 2021.jpg",
+        "w":  1600,
+        "h":  1199
+    },
+    {
+        "project":  "hwanggok",
+        "n":  "07",
+        "file":  "assets/works/hwanggok/07.jpg",
+        "thumb":  "assets/works/hwanggok/07-sm.jpg",
+        "orig":  "Hwanggok #25, 40x53cm, Archival Pigment Print, 2021.jpg",
+        "w":  1600,
+        "h":  1199
+    },
+    {
+        "project":  "hwanggok",
+        "n":  "08",
+        "file":  "assets/works/hwanggok/08.jpg",
+        "thumb":  "assets/works/hwanggok/08-sm.jpg",
+        "orig":  "Hwanggok #34, 40x53cm, Archival Pigment Print, 2021.jpg",
+        "w":  1600,
+        "h":  1200
+    },
+    {
+        "project":  "hwanggok",
+        "n":  "09",
+        "file":  "assets/works/hwanggok/09.jpg",
+        "thumb":  "assets/works/hwanggok/09-sm.jpg",
+        "orig":  "Hwanggok #35, 60x80cm, Archival Pigment Print, 2021.jpg",
+        "w":  1600,
+        "h":  1200
+    },
+    {
+        "project":  "hwanggok",
+        "n":  "10",
+        "file":  "assets/works/hwanggok/10.jpg",
+        "thumb":  "assets/works/hwanggok/10-sm.jpg",
+        "orig":  "Hwanggok #36, 60x80cm, Archival Pigment Print, 2022.jpg",
+        "w":  1600,
+        "h":  1199
+    },
+    {
+        "project":  "hwanggok",
+        "n":  "11",
+        "file":  "assets/works/hwanggok/11.jpg",
+        "thumb":  "assets/works/hwanggok/11-sm.jpg",
+        "orig":  "Hwanggok #45, 100x133cm, Archival Pigment Print, 2023.jpg",
+        "w":  1600,
+        "h":  1199
+    },
+    {
+        "project":  "hwanggok",
+        "n":  "12",
+        "file":  "assets/works/hwanggok/12.jpg",
+        "thumb":  "assets/works/hwanggok/12-sm.jpg",
+        "orig":  "Hwanggok #46, 60x80cm, Archival Pigment Print, 2022.jpg",
+        "w":  1600,
+        "h":  1199
+    },
+    {
+        "project":  "hwanggok",
+        "n":  "13",
+        "file":  "assets/works/hwanggok/13.jpg",
+        "thumb":  "assets/works/hwanggok/13-sm.jpg",
+        "orig":  "Hwanggok #47, 40x53cm, Archival Pigment Print, 2021.jpg",
+        "w":  1600,
+        "h":  1199
+    },
+    {
+        "project":  "hwanggok",
+        "n":  "14",
+        "file":  "assets/works/hwanggok/14.jpg",
+        "thumb":  "assets/works/hwanggok/14-sm.jpg",
+        "orig":  "Hwanggok #49, 40x53cm, Archival Pigment Print, 2023.jpg",
+        "w":  1600,
+        "h":  1199
+    },
+    {
+        "project":  "hwanggok",
+        "n":  "15",
+        "file":  "assets/works/hwanggok/15.jpg",
+        "thumb":  "assets/works/hwanggok/15-sm.jpg",
+        "orig":  "Hwanggok #57, 40x53cm, Archival Pigment Print, 2021.jpg",
+        "w":  1600,
+        "h":  1199
+    },
+    {
+        "project":  "hwanggok",
+        "n":  "16",
+        "file":  "assets/works/hwanggok/16.jpg",
+        "thumb":  "assets/works/hwanggok/16-sm.jpg",
+        "orig":  "Hwanggok #59, 60x80cm, Archival Pigment Print, 2022.jpg",
+        "w":  1600,
+        "h":  1199
+    },
+    {
+        "project":  "hwanggok",
+        "n":  "17",
+        "file":  "assets/works/hwanggok/17.jpg",
+        "thumb":  "assets/works/hwanggok/17-sm.jpg",
+        "orig":  "Hwanggok #60, 60x80cm, Archival Pigment Print, 2021.jpg",
+        "w":  1600,
+        "h":  1200
+    },
+    {
+        "project":  "hwanggok",
+        "n":  "18",
+        "file":  "assets/works/hwanggok/18.jpg",
+        "thumb":  "assets/works/hwanggok/18-sm.jpg",
+        "orig":  "Hwanggok #72, 100x133cm, Archival Pigment Print, 2025.jpg",
+        "w":  1600,
+        "h":  1200
+    },
+    {
+        "project":  "installation",
+        "n":  "01",
+        "file":  "assets/works/installation/01.jpg",
+        "thumb":  "assets/works/installation/01-sm.jpg",
+        "orig":  "42.jpg",
+        "w":  1200,
+        "h":  900
+    },
+    {
+        "project":  "installation",
+        "n":  "02",
+        "file":  "assets/works/installation/02.jpg",
+        "thumb":  "assets/works/installation/02-sm.jpg",
+        "orig":  "_DSF6444 copy 2.jpg",
+        "w":  1024,
+        "h":  683
+    },
+    {
+        "project":  "installation",
+        "n":  "03",
+        "file":  "assets/works/installation/03.jpg",
+        "thumb":  "assets/works/installation/03-sm.jpg",
+        "orig":  "사진비평상_2.jpg",
+        "w":  1600,
+        "h":  1066
+    },
+    {
+        "project":  "installation",
+        "n":  "04",
+        "file":  "assets/works/installation/04.jpg",
+        "thumb":  "assets/works/installation/04-sm.jpg",
+        "orig":  "전시설치전경_2.jpg",
+        "w":  1600,
+        "h":  1066
+    },
+    {
+        "project":  "installation",
+        "n":  "05",
+        "file":  "assets/works/installation/05.jpg",
+        "thumb":  "assets/works/installation/05-sm.jpg",
+        "orig":  "전시_3.jpg",
+        "w":  1600,
+        "h":  1066
+    },
+    {
+        "project":  "installation",
+        "n":  "06",
+        "file":  "assets/works/installation/06.jpg",
+        "thumb":  "assets/works/installation/06-sm.jpg",
+        "orig":  "전시설치전경_3.jpg",
+        "w":  1600,
+        "h":  1066
+    },
+    {
+        "project":  "installation",
+        "n":  "07",
+        "file":  "assets/works/installation/07.jpg",
+        "thumb":  "assets/works/installation/07-sm.jpg",
+        "orig":  "전시설치전경_5.jpg",
+        "w":  1024,
+        "h":  683
+    },
+    {
+        "project":  "installation",
+        "n":  "08",
+        "file":  "assets/works/installation/08.jpg",
+        "thumb":  "assets/works/installation/08-sm.jpg",
+        "orig":  "전시설치전경_6.jpg",
+        "w":  1600,
+        "h":  1066
+    },
+    {
+        "project":  "installation",
+        "n":  "09",
+        "file":  "assets/works/installation/09.jpg",
+        "thumb":  "assets/works/installation/09-sm.jpg",
+        "orig":  "전시_7.jpg",
+        "w":  1600,
+        "h":  1066
+    },
+    {
+        "project":  "installation",
+        "n":  "10",
+        "file":  "assets/works/installation/10.jpg",
+        "thumb":  "assets/works/installation/10-sm.jpg",
+        "orig":  "전시_8.jpg",
+        "w":  1600,
+        "h":  1066
+    },
+    {
+        "project":  "installation",
+        "n":  "11",
+        "file":  "assets/works/installation/11.jpg",
+        "thumb":  "assets/works/installation/11-sm.jpg",
+        "orig":  "전시설치전경_9.jpg",
+        "w":  1600,
+        "h":  1066
+    },
+    {
+        "project":  "installation",
+        "n":  "12",
+        "file":  "assets/works/installation/12.jpg",
+        "thumb":  "assets/works/installation/12-sm.jpg",
+        "orig":  "전시설치전경_10.jpg",
+        "w":  1600,
+        "h":  1066
+    },
+    {
+        "project":  "installation",
+        "n":  "13",
+        "file":  "assets/works/installation/13.jpg",
+        "thumb":  "assets/works/installation/13-sm.jpg",
+        "orig":  "전시_14.jpg",
+        "w":  1600,
+        "h":  1066
+    },
+    {
+        "project":  "installation",
+        "n":  "14",
+        "file":  "assets/works/installation/14.jpg",
+        "thumb":  "assets/works/installation/14-sm.jpg",
+        "orig":  "_DSC4908-HDR copy.jpg",
+        "w":  1600,
+        "h":  1066
+    },
+    {
+        "project":  "installation",
+        "n":  "15",
+        "file":  "assets/works/installation/15.jpg",
+        "thumb":  "assets/works/installation/15-sm.jpg",
+        "orig":  "_DSF6437 copy.jpg",
+        "w":  1600,
+        "h":  1067
+    },
+    {
+        "project":  "installation",
+        "n":  "16",
+        "file":  "assets/works/installation/16.jpg",
+        "thumb":  "assets/works/installation/16-sm.jpg",
+        "orig":  "_DSF6551 copy2.jpg",
+        "w":  1200,
+        "h":  800
+    },
+    {
+        "project":  "installation",
+        "n":  "17",
+        "file":  "assets/works/installation/17.jpg",
+        "thumb":  "assets/works/installation/17-sm.jpg",
+        "orig":  "_DSF6574 copy.jpg",
+        "w":  1200,
+        "h":  800
+    },
+    {
+        "project":  "installation",
+        "n":  "18",
+        "file":  "assets/works/installation/18.jpg",
+        "thumb":  "assets/works/installation/18-sm.jpg",
+        "orig":  "_DSF7254 copy.jpg",
+        "w":  1066,
+        "h":  1600
+    },
+    {
+        "project":  "installation",
+        "n":  "19",
+        "file":  "assets/works/installation/19.jpg",
+        "thumb":  "assets/works/installation/19-sm.jpg",
+        "orig":  "_DSF7289 copy3.jpg",
+        "w":  1600,
+        "h":  1066
+    },
+    {
+        "project":  "installation",
+        "n":  "20",
+        "file":  "assets/works/installation/20.jpg",
+        "thumb":  "assets/works/installation/20-sm.jpg",
+        "orig":  "_DSF7291 copy.jpg",
+        "w":  1600,
+        "h":  1066
+    },
+    {
+        "project":  "installation",
+        "n":  "21",
+        "file":  "assets/works/installation/21.jpg",
+        "thumb":  "assets/works/installation/21-sm.jpg",
+        "orig":  "_DSF8511 copy.jpg",
+        "w":  1067,
+        "h":  1600
+    },
+    {
+        "project":  "installation",
+        "n":  "22",
+        "file":  "assets/works/installation/22.jpg",
+        "thumb":  "assets/works/installation/22-sm.jpg",
+        "orig":  "_DSF8517 copy.jpg",
+        "w":  1600,
+        "h":  1066
+    },
+    {
+        "project":  "installation",
+        "n":  "23",
+        "file":  "assets/works/installation/23.jpg",
+        "thumb":  "assets/works/installation/23-sm.jpg",
+        "orig":  "_DSF8521 copy.jpg",
+        "w":  1600,
+        "h":  1066
+    },
+    {
+        "project":  "installation",
+        "n":  "24",
+        "file":  "assets/works/installation/24.jpg",
+        "thumb":  "assets/works/installation/24-sm.jpg",
+        "orig":  "_DSF8641-Enhanced-NR copy.jpg",
+        "w":  1500,
+        "h":  972
+    },
+    {
+        "project":  "installation",
+        "n":  "25",
+        "file":  "assets/works/installation/25.jpg",
+        "thumb":  "assets/works/installation/25-sm.jpg",
+        "orig":  "_DSF8659-Enhanced-NR copy.jpg",
+        "w":  1500,
+        "h":  1000
+    },
+    {
+        "project":  "installation",
+        "n":  "26",
+        "file":  "assets/works/installation/26.jpg",
+        "thumb":  "assets/works/installation/26-sm.jpg",
+        "orig":  "DSC01541 copy.jpg",
+        "w":  1600,
+        "h":  1067
+    },
+    {
+        "project":  "installation",
+        "n":  "27",
+        "file":  "assets/works/installation/27.jpg",
+        "thumb":  "assets/works/installation/27-sm.jpg",
+        "orig":  "DSC01543.jpg",
+        "w":  1600,
+        "h":  1067
+    },
+    {
+        "project":  "installation",
+        "n":  "28",
+        "file":  "assets/works/installation/28.jpg",
+        "thumb":  "assets/works/installation/28-sm.jpg",
+        "orig":  "DSC01545.jpg",
+        "w":  1600,
+        "h":  1066
+    },
+    {
+        "project":  "installation",
+        "n":  "29",
+        "file":  "assets/works/installation/29.jpg",
+        "thumb":  "assets/works/installation/29-sm.jpg",
+        "orig":  "DSC01547.jpg",
+        "w":  1067,
+        "h":  1600
+    },
+    {
+        "project":  "installation",
+        "n":  "30",
+        "file":  "assets/works/installation/30.jpg",
+        "thumb":  "assets/works/installation/30-sm.jpg",
+        "orig":  "DSC01548.jpg",
+        "w":  1600,
+        "h":  1066
+    },
+    {
+        "project":  "installation",
+        "n":  "31",
+        "file":  "assets/works/installation/31.jpg",
+        "thumb":  "assets/works/installation/31-sm.jpg",
+        "orig":  "DSC01555.jpg",
+        "w":  1000,
+        "h":  1500
+    },
+    {
+        "project":  "installation",
+        "n":  "32",
+        "file":  "assets/works/installation/32.jpg",
+        "thumb":  "assets/works/installation/32-sm.jpg",
+        "orig":  "DSC01563.jpg",
+        "w":  1067,
+        "h":  1600
+    },
+    {
+        "project":  "installation",
+        "n":  "33",
+        "file":  "assets/works/installation/33.jpg",
+        "thumb":  "assets/works/installation/33-sm.jpg",
+        "orig":  "DSC01564.jpg",
+        "w":  1066,
+        "h":  1600
+    },
+    {
+        "project":  "installation",
+        "n":  "34",
+        "file":  "assets/works/installation/34.jpg",
+        "thumb":  "assets/works/installation/34-sm.jpg",
+        "orig":  "DSC01570.jpg",
+        "w":  1600,
+        "h":  1066
+    },
+    {
+        "project":  "installation",
+        "n":  "35",
+        "file":  "assets/works/installation/35.jpg",
+        "thumb":  "assets/works/installation/35-sm.jpg",
+        "orig":  "KakaoTalk_20231128_092742333_01 (1).jpg",
+        "w":  1600,
+        "h":  1600
+    },
+    {
+        "project":  "installation",
+        "n":  "36",
+        "file":  "assets/works/installation/36.jpg",
+        "thumb":  "assets/works/installation/36-sm.jpg",
+        "orig":  "모과_2_안재영 copy.jpg",
+        "w":  1200,
+        "h":  1600
+    },
+    {
+        "project":  "installation",
+        "n":  "37",
+        "file":  "assets/works/installation/37.jpg",
+        "thumb":  "assets/works/installation/37-sm.jpg",
+        "orig":  "부산커넥티드_포스터.jpg",
+        "w":  1130,
+        "h":  1600
+    },
+    {
+        "project":  "installation",
+        "n":  "38",
+        "file":  "assets/works/installation/38.jpg",
+        "thumb":  "assets/works/installation/38-sm.jpg",
+        "orig":  "전시설치전경_1 copy.jpg",
+        "w":  1600,
+        "h":  1067
+    },
+    {
+        "project":  "installation",
+        "n":  "39",
+        "file":  "assets/works/installation/39.jpg",
+        "thumb":  "assets/works/installation/39-sm.jpg",
+        "orig":  "칠곡트랜스미디어축제_전시전경.jpg",
+        "w":  884,
+        "h":  847
+    },
+    {
+        "project":  "installation",
+        "n":  "40",
+        "file":  "assets/works/installation/40.jpg",
+        "thumb":  "assets/works/installation/40-sm.jpg",
+        "orig":  "칠곡트랜스미디어축제_포스터.png",
+        "w":  1600,
+        "h":  1600
+    },
+    {
+        "project":  "installation",
+        "n":  "41",
+        "file":  "assets/works/installation/41.jpg",
+        "thumb":  "assets/works/installation/41-sm.jpg",
+        "orig":  "파운딩하트_포스터.jpg",
+        "w":  1131,
+        "h":  1600
+    },
+    {
+        "project":  "installation",
+        "n":  "42",
+        "file":  "assets/works/installation/42.jpg",
+        "thumb":  "assets/works/installation/42-sm.jpg",
+        "orig":  "환상오류_포스터_현수막.jpg",
+        "w":  1201,
+        "h":  1600
+    },
+    {
+        "project":  "installation",
+        "n":  "43",
+        "file":  "assets/works/installation/43.jpg",
+        "thumb":  "assets/works/installation/43-sm.jpg",
+        "orig":  "KakaoTalk_20241020_002310278.jpg",
+        "w":  1133,
+        "h":  1600
+    },
+    {
+        "project":  "installation",
+        "n":  "44",
+        "file":  "assets/works/installation/44.jpg",
+        "thumb":  "assets/works/installation/44-sm.jpg",
+        "orig":  "KakaoTalk_20231128_092941912.jpg",
+        "w":  666,
+        "h":  666
+    },
+    {
+        "project":  "installation",
+        "n":  "45",
+        "file":  "assets/works/installation/45.jpg",
+        "thumb":  "assets/works/installation/45-sm.jpg",
+        "orig":  "KakaoTalk_20260208_114901605.jpg",
+        "w":  1200,
+        "h":  1600
+    },
+    {
+        "project":  "installation",
+        "n":  "46",
+        "file":  "assets/works/installation/46.jpg",
+        "thumb":  "assets/works/installation/46-sm.jpg",
+        "orig":  "KakaoTalk_20240718_133025945.jpg",
+        "w":  1063,
+        "h":  1506
+    },
+    {
+        "project":  "installation",
+        "n":  "47",
+        "file":  "assets/works/installation/47.jpg",
+        "thumb":  "assets/works/installation/47-sm.jpg",
+        "orig":  "KakaoTalk_20260203_171801144.jpg",
+        "w":  1280,
+        "h":  1600
+    }
+]

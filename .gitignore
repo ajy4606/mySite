@@ -1,0 +1,27 @@
+# Temporary working files
+_streak-prototype/
+_prototype/
+_tmp/
+_scratch/
+*.tmp
+
+# Camera originals are intentionally excluded because they are large.
+# The web-ready copies under assets/works/ remain tracked.
+# Back up the originals separately to external or cloud storage.
+/images/*
+!/images/README.txt
+
+# Operating system and editor files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+.vscode/
+.idea/
+*.code-workspace
+
+# Local tool output
+node_modules/
+*.log
+.netlify/
