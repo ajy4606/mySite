@@ -186,13 +186,17 @@ const revealIO = new IntersectionObserver((entries) => {
 let strata = [];
 const SEP_MAX = 9;
 const MOBILE_PLAIN = window.matchMedia('(max-width:820px), (hover:none) and (pointer:coarse)').matches;
+/* Keep artwork documentation intact while the page scrolls. The sliced
+   treatment remains available in the fullscreen viewer, where it is an
+   explicit interaction rather than something that can read as a layout bug. */
+const DETAIL_SCROLL_SPLIT = false;
 
 function measure(){
   strata = $$('.view.active .strata');
 }
 
 function paintStrata(){
-  if(REDUCED || MOBILE_PLAIN) return;
+  if(!DETAIL_SCROLL_SPLIT || REDUCED || MOBILE_PLAIN) return;
   /* the exhibition views are documentation — they never come apart */
   if(currentView === 'v-installation') return;
   const vh = window.innerHeight;
@@ -233,7 +237,7 @@ function preparePlate(el){
   /* Documentation is never taken apart, so it is never sliced. Leaving the
      bands in place showed faint seams between them — five strips of
      fractional height cannot tile a box exactly at every viewport width. */
-  if(el.dataset.nosplit || MOBILE_PLAIN) return;
+  if(!DETAIL_SCROLL_SPLIT || el.dataset.nosplit || MOBILE_PLAIN) return;
   const src = el.dataset.src;
   if(!src) return;
   el.dataset.pending = '1';

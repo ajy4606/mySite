@@ -145,7 +145,7 @@ function init(){
     /* Interactive treatments stay below full retina resolution so every
        series can scrub smoothly. Plain lightboxes keep the higher ceiling. */
     const plain = state.mode > 4.5 && state.mode < 5.5;
-    const dprCap = plain ? 2 : (W < 700 ? 1.25 : 1.5);
+    const dprCap = plain ? 2 : (W < 700 ? 2 : 1.5);
     const dpr = Math.min(window.devicePixelRatio || 1, dprCap);
     renderer.setPixelRatio(dpr);
     renderer.setSize(W, H, false);
@@ -189,7 +189,12 @@ function init(){
       mat.uniforms.uSeed.value = seedFor(item.src || String(nextIdx));
       state.aspect = tex.image.width / tex.image.height;
       resize();
-      state.t = 1; state.tTarget = 0;          // assemble on entry
+      /* Phones open on the intact source image. Starting from the fully
+         decomposed shader state looked like compression damage on a small
+         display; the treatment is still available from the stage bar. */
+      state.t = window.innerWidth < 700 ? 0 : 1;
+      state.tTarget = 0;
+      mat.uniforms.uT.value = state.t;
       mat.uniforms.uFade.value = 0;
       ui.cap.textContent = item.caption || '';
       ui.prev.disabled = state.idx === 0;
