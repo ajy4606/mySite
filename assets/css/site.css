@@ -791,9 +791,10 @@ html[data-lang="en"] .row .kr{visibility:hidden}
 }
 .dlm.open{display:block}
 .dlm.shown{opacity:1}
-.dlm canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.dlm canvas{position:absolute;inset:0;z-index:0;width:100%;height:100%;display:block;touch-action:none}
+.dlm-source{display:none}
 
-.dlm-ui{position:absolute;inset:0;pointer-events:none;padding:var(--m);display:flex;flex-direction:column;justify-content:space-between}
+.dlm-ui{position:absolute;inset:0;z-index:2;pointer-events:none;padding:var(--m);display:flex;flex-direction:column;justify-content:space-between}
 .dlm-ui > *{pointer-events:auto}
 .dlm-top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
 .dlm-cap{font-family:var(--mono);font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-2);max-width:52ch;line-height:1.8}
@@ -1056,6 +1057,18 @@ html[data-lang="en"] .row .kr{visibility:hidden}
   .plate .tag{display:none}
   .strata::after{content:none;display:none}
   .strata:focus-visible{outline:none}
+}
+@media (max-width:699px){
+  /* The source stage is a real browser image, not a reduced-resolution WebGL
+     redraw. It stays pixel-sharp on retina phones; moving the scrubber swaps
+     back to the canvas for the series treatment. */
+  .dlm.source-view .dlm-source{
+    display:block;position:absolute;z-index:1;
+    left:20px;right:20px;top:74px;bottom:168px;
+    width:calc(100% - 40px);height:calc(100% - 242px);
+    object-fit:contain;pointer-events:none;
+  }
+  .dlm.is-loading .dlm-source{opacity:0}
 }
 @media (max-width:640px){
   body{font-size:14.5px}

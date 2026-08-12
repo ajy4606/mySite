@@ -84,6 +84,11 @@ function build(){
 function init(){
   const root   = build();
   const canvas = document.createElement('canvas');
+  const source = document.createElement('img');
+  source.className = 'dlm-source';
+  source.alt = '';
+  source.decoding = 'async';
+  root.prepend(source);
   root.prepend(canvas);
 
   let renderer;
@@ -134,6 +139,11 @@ function init(){
 
   let pushed = false;              // whether we own a history entry
 
+  function syncSourceView(){
+    const intact = window.innerWidth < 700 && state.tTarget <= 0.001;
+    root.classList.toggle('source-view', state.open && intact && source.hasAttribute('src'));
+  }
+
   const loader = new THREE.TextureLoader();
   loader.setCrossOrigin('anonymous');
   const cache = new Map();
@@ -165,6 +175,7 @@ function init(){
     mesh.scale.set(w, h, 1);
     mesh.position.y = (padB - padT) / 2;
     mat.uniforms.uPlanePx.value.set(w * dpr, h * dpr);
+    syncSourceView();
   }
   window.addEventListener('resize', resize);
 
@@ -196,11 +207,13 @@ function init(){
       state.tTarget = 0;
       mat.uniforms.uT.value = state.t;
       mat.uniforms.uFade.value = 0;
+      source.src = item.src;
       ui.cap.textContent = item.caption || '';
       ui.prev.disabled = state.idx === 0;
       ui.next.disabled = state.idx === state.list.length - 1;
       root.classList.remove('is-loading');
       root.removeAttribute('aria-busy');
+      syncSourceView();
       if(state.onShow) state.onShow(item);
       paintHud();
     };
@@ -256,6 +269,7 @@ function init(){
   function setT(v){
     const next = clamp(v, 0, 1);
     state.tTarget = next;
+    syncSourceView();
     /* Direct manipulation follows the pointer immediately. Stage buttons
        still use the eased transition in the render loop. */
     if(dragging || trackDrag){
