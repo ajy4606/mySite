@@ -1045,6 +1045,11 @@ html[data-lang="en"] .row .kr{visibility:hidden}
   .inst .plate{flex-basis:calc(var(--ar,1.333) * 230px);min-width:min(210px,100%)}
   .card,.card:nth-child(n){grid-column:span 6}
   .peek{display:none}
+  /* Project images stay whole during touch scrolling. This also protects
+     against bands that were built before a viewport resize or rotation. */
+  .strata{cursor:pointer}
+  .strata.split > img{opacity:1}
+  .strata i{display:none}
 }
 @media (max-width:640px){
   body{font-size:14.5px}

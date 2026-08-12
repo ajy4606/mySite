@@ -59,7 +59,9 @@ const THREADS = {
 /* ============================================================
    1. language
    ============================================================ */
-const LANG_KEY = 'ajy-lang';
+/* v2 intentionally resets the old browser-language default once. New visitors
+   start in Korean; after that, an explicit KO/EN choice is remembered. */
+const LANG_KEY = 'ajy-lang-v2';
 
 function currentLang(){
   return document.documentElement.getAttribute('data-lang') || 'ko';
@@ -80,8 +82,7 @@ function setLang(l){
 function initLang(){
   let saved = null;
   try{ saved = localStorage.getItem(LANG_KEY); }catch(e){}
-  const guess = (navigator.language || 'ko').toLowerCase().startsWith('ko') ? 'ko' : 'en';
-  setLang(saved === 'ko' || saved === 'en' ? saved : guess);
+  setLang(saved === 'ko' || saved === 'en' ? saved : 'ko');
   $$('.lang-tog button').forEach(b => b.addEventListener('click', () => setLang(b.dataset.lang)));
 }
 
@@ -184,13 +185,14 @@ const revealIO = new IntersectionObserver((entries) => {
    ============================================================ */
 let strata = [];
 const SEP_MAX = 9;
+const MOBILE_PLAIN = window.matchMedia('(max-width:820px), (hover:none) and (pointer:coarse)').matches;
 
 function measure(){
   strata = $$('.view.active .strata');
 }
 
 function paintStrata(){
-  if(REDUCED) return;
+  if(REDUCED || MOBILE_PLAIN) return;
   /* the exhibition views are documentation — they never come apart */
   if(currentView === 'v-installation') return;
   const vh = window.innerHeight;
@@ -231,7 +233,7 @@ function preparePlate(el){
   /* Documentation is never taken apart, so it is never sliced. Leaving the
      bands in place showed faint seams between them — five strips of
      fractional height cannot tile a box exactly at every viewport width. */
-  if(el.dataset.nosplit) return;
+  if(el.dataset.nosplit || MOBILE_PLAIN) return;
   const src = el.dataset.src;
   if(!src) return;
   el.dataset.pending = '1';
@@ -295,6 +297,13 @@ function paintResidue(){
    ============================================================ */
 function bindView(view){
   if(!view) return;
+
+  /* On phones the plate must remain a stable photograph while the page
+     scrolls. The decomposition remains available only through the deliberate
+     tap-to-open viewer, never as a passive scroll effect. */
+  if(MOBILE_PLAIN){
+    $$('.strata', view).forEach(el => { el.dataset.nosplit = '1'; });
+  }
 
   /* documentation opens as a plain lightbox and is never sliced — set before
      the plates are observed so the first ones are prepared correctly */
