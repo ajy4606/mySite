@@ -106,6 +106,22 @@ function Save-Resized($img, $dstPath, $maxDim, $quality) {
   return @{ w = $nw; h = $nh }
 }
 
+# System.Drawing exposes raw pixels and does not apply the camera's EXIF
+# rotation automatically. Normalize it before creating the web copies.
+function Apply-ExifOrientation($img) {
+  try {
+    if ($img.PropertyIdList -notcontains 274) { return }
+    $orientation = [BitConverter]::ToUInt16($img.GetPropertyItem(274).Value, 0)
+    switch ($orientation) {
+      3 { $img.RotateFlip([System.Drawing.RotateFlipType]::Rotate180FlipNone) }
+      6 { $img.RotateFlip([System.Drawing.RotateFlipType]::Rotate90FlipNone) }
+      8 { $img.RotateFlip([System.Drawing.RotateFlipType]::Rotate270FlipNone) }
+    }
+  } catch {
+    # Bad or missing metadata must not stop the remaining image build.
+  }
+}
+
 # 자리 바꾸기 — 작품 번호순이 아닌 자리에 두고 싶을 때만 씁니다.
 #   슬러그 = @{ 작품번호 = 놓고싶은자리의번호 }
 # 아래는 《미도래》 #21과 #23의 자리를 맞바꾼 것입니다. 파일 이름은 그대로 두고
@@ -180,7 +196,10 @@ foreach ($folder in $slugs.Keys) {
     $nn = '{0:d2}' -f $i
 
     # 사진 한 장이 깨져 있어도 나머지는 계속 만들도록 감쌉니다.
-    try   { $img = [System.Drawing.Image]::FromFile($f.FullName) }
+    try   {
+      $img = [System.Drawing.Image]::FromFile($f.FullName)
+      Apply-ExifOrientation $img
+    }
     catch {
       Write-Host "  !! 못 읽는 파일이라 건너뜁니다: $($f.Name)" -ForegroundColor Yellow
       $i--
@@ -205,6 +224,10 @@ foreach ($folder in $slugs.Keys) {
 }
 
 $all = @($fresh) + @($kept)
-$all | ConvertTo-Json -Depth 4 | Out-File -Encoding utf8 $manifestPath
+# Windows PowerShell aligns JSON property values with spaces. Strip only the
+# line-end padding so generated manifests stay clean in Git diffs.
+$json = ($all | ConvertTo-Json -Depth 4) -replace '(?m)[ \t]+(?=\r?$)', ''
+$json = ($json -replace "\r\n", "\n").TrimEnd() + "\n"
+[System.IO.File]::WriteAllText($manifestPath, $json, (New-Object System.Text.UTF8Encoding($false)))
 ""
 "  rebuilt: " + $fresh.Count + "   kept untouched: " + $kept.Count

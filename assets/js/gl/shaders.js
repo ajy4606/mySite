@@ -245,89 +245,139 @@ vec3 modePixelColour(vec3 c, float t){
 }
 
 /* ---- 7 · STREAK — Hwanggok (supersedes contour) ------------------------
-   Replaces the iso-luminance contour as Hwanggok's active treatment. Each
-   column casts its own reach to the left, sized by its own brightness, so
-   highlights comb out into hairline trails while the near-black ground
-   stays put — a photograph that is still itself on the right and dissolves
-   into streaks on the left, rather than a filter laid over the whole frame.
+   The frame is treated as terrain rather than filtered. Its own tone is read
+   as a height field and the plate is displaced along it, the way a photograph
+   driving a displacement map pulls geometry: flat ground stays put, slopes
+   elongate, and the material draws out into ridges that keep their grain
+   instead of dissolving.
 
-   A first version picked a single winning tap per destination pixel with a
-   hard reach cutoff. It read as pasted rectangles, not a continuous smear:
-   the winner flips discretely from one destination pixel to the next
-   whenever a neighbouring source's reach crosses the distance to it. Fixed
-   two ways — a soft (smoothstep) edge on the cutoff instead of a hard
-   if(), and a weighted blend across every tap instead of one winner, so
-   neighbouring destinations shift gradually instead of jumping between
-   sources.
+   Earlier versions gathered a luminance-weighted average along one fixed
+   heading. Two things were wrong with that. An average is motion blur, so it
+   destroyed the very detail that makes a stretch legible — the eye reads
+   elongation from grain that survives being pulled, not from softness. And a
+   constant heading sits across the picture rather than inside it, which is
+   what made it look stamped on. Three changes turn it back into displacement:
 
-   A second version read colour AND reach off the same blurred mip, the way
-   modeContour reads one tone for its threshold — but here that blur lands
-   directly in what's displayed, and the whole frame turned into a soft
-   smudge with no distinct trails left. The fix is to split the two: colour
-   stays a sharp, unbiased read, and only the value driving how far a tap
-   reaches is taken from a gently blurred one, just enough to stop a single
-   grain speck from spiking a streak that shouldn't be there.
+   1. The sampling coordinate is warped, not averaged. uvd = uv - dir·H(uvd)
+      is the relation relief mapping solves; four damped fixed-point steps get
+      close enough, and the texture is then read sharp at the warped point.
+      Where a slope is steep enough that the iteration folds, the surface
+      folds — that is the displacement overdriven, and it is the part that
+      reads as alien rather than as a filter.
 
-   Every plate ran identical numbers at first, so the eighteen Hwanggok
-   frames all combed the same distance in the same direction and the series
-   read as one filter stamped on eighteen photographs. The seed (0..1, fixed
-   per plate — see uSeed) now varies three things per image: how far the
-   comb reaches, how high up the tonal range it bites, and a slight tilt off
-   horizontal. The tilt stays small on purpose: swinging direction freely
-   would break the series' read, while a few degrees is enough to stop two
-   plates looking stamped from the same die. */
+   2. The heading bends into the height field's own gradient, so the pull runs
+      down the picture's slopes and around its masses instead of combing
+      through them. This is what makes it sit in the image.
+
+   3. The slopes are lit. A displacement map is felt because its ridges catch
+      light; the same warp without a shading term reads as a flat smear. One
+      soft key over a normal taken from the height gradient.
+
+   The only average left runs along the path the pixel actually travelled —
+   an elongated texel, not a directional blur. Per-plate seeds vary amplitude,
+   heading and how far up the tones the height bites, so the eighteen frames
+   do not stretch identically. At ~14 texture reads it also costs an order of
+   magnitude less than the 160 the gather needed. */
+float streakH(sampler2D tex, vec2 uv, float bias, float gamma){
+  float l = luma(toSRGB(texture2D(tex, clamp(uv, 0.0008, 0.9992), bias).rgb));
+  return pow(clamp(l, 0.0, 1.0), gamma);
+}
 vec3 modeStreak(sampler2D tex, vec2 uv, vec2 planePx, float t, float seed, vec3 c){
-  float amt = smoothstep(0.03, 1.0, t) * 0.95;
+  /* Front-loaded: a linear ramp put almost nothing on screen until the last
+     third, so the second stage read as source and the four stops looked like
+     two. The power curve lifts the early range without touching the ends. */
+  float amt = pow(smoothstep(0.02, 1.0, t), 0.70);
   if(amt <= 0.0001) return c;
 
   /* three decorrelated draws from the one seed */
-  float rLen   = hash11(seed * 71.3 + 3.1);
-  float rGamma = hash11(seed * 129.7 + 11.9);
-  float rTilt  = hash11(seed * 37.7 + 57.3);
+  float rAmp  = hash11(seed * 71.3  + 3.1);
+  float rTilt = hash11(seed * 37.7  + 57.3);
+  float rGam  = hash11(seed * 129.7 + 11.9);
 
-  float lenScale = mix(0.72, 1.34, rLen);          /* some plates barely comb, some run long */
-  /* A gamma up at 2.4 meant only near-white specular pixels ever reached far
-     enough to see, so the comb lived in the highlights and the picture looked
-     almost untouched. Bringing it down lets the midtones — fur, concrete,
-     foliage, the bulk of these frames — carry the streak too. */
-  float gamma    = mix(1.25, 2.20, rGamma);        /* how far up the tones the streak bites */
-  float tilt     = (rTilt - 0.5) * 0.10;           /* ±~3° off horizontal, no more */
+  float gamma = mix(1.05, 1.85, rGam);   /* how far up the tones the height bites */
+  float amp   = mix(0.045, 0.115, amt) * mix(0.80, 1.28, rAmp);
+  float tilt  = (rTilt - 0.5) * 0.34;
+  vec2  head  = normalize(vec2(1.0, tilt * planePx.x / max(planePx.y, 1.0)));
+  /* Terraces. A continuous height gives a continuous smear, which is where
+     this started to look like Midore's afterimage — both series ended up
+     soft. Quantising the height makes the surface displace in plateaus with
+     hard risers between them: the plate steps rather than slides, and the
+     stretch reads as a mesh being pushed, not as an image being blurred.
+     Many fine terraces at rest, few and cliffed when fully driven. */
+  float levels = mix(52.0, 7.0, amt);
 
-  float maxLen   = mix(0.020, 0.34, amt) * lenScale;
-  float lumaBias = mix(0.6, 1.6, amt);      /* gentle — stabilises reach only */
+  /* The height field has to be terrain, not texture. Read too sharp, every
+     grain speck becomes its own ridge and the key light below turns the plate
+     into an etching — landforms are what should catch the light, not noise.
+     A high LOD bias plus a wide gradient stencil keeps only the large forms. */
+  vec2  px   = 1.0 / max(planePx, vec2(1.0));
+  vec2  e    = px * 5.0;
+  float bias = 3.8;
 
-  /* aspect-corrected direction, so the tilt is a true angle rather than a
-     shear that changes with the plate's proportions */
-  vec2 dir = normalize(vec2(1.0, tilt * planePx.x / max(planePx.y, 1.0)));
+  float hR = streakH(tex, uv + vec2(e.x, 0.0), bias, gamma);
+  float hL = streakH(tex, uv - vec2(e.x, 0.0), bias, gamma);
+  float hU = streakH(tex, uv + vec2(0.0, e.y), bias, gamma);
+  float hD = streakH(tex, uv - vec2(0.0, e.y), bias, gamma);
+  vec2  grad = vec2(hR - hL, hU - hD);
+  float slope = length(grad);
 
-  const int TAPS = 40;
-  float stepUv = maxLen / float(TAPS);
-  float reachDy = 1.5 / max(planePx.y, 1.0);
+  /* bend the heading into the slope, but only where there is a slope to
+     follow — on flat ground the gradient is noise and would spin the pull */
+  vec2 gdir = grad / max(slope, 1e-4);
+  vec2 dir  = normalize(mix(head, gdir, 0.42 * smoothstep(0.010, 0.16, slope)));
 
-  vec3  num = vec3(0.0);
-  float den = 0.0;
-  for(int i = 0; i < TAPS; i++){
-    float d   = float(i) * stepUv;
-    vec2  suv = clamp(uv + dir * d, 0.0008, 0.9992);
-    vec3  sc  = toSRGB(texture2D(tex, suv).rgb);                        /* sharp — this is what shows */
-    float lm  = luma(toSRGB(texture2D(tex, suv, lumaBias).rgb));        /* soft — reach only */
-    float lmUp = luma(toSRGB(texture2D(tex, clamp(suv + vec2(0.0, reachDy), 0.0008, 0.9992), lumaBias).rgb));
-    float lmDn = luma(toSRGB(texture2D(tex, clamp(suv - vec2(0.0, reachDy), 0.0008, 0.9992), lumaBias).rgb));
-    lm = (lm * 2.0 + lmUp + lmDn) * 0.25;
-    float q     = pow(clamp(lm, 0.0, 1.0), gamma);   /* highlights reach further */
-    float reach = q * maxLen;
-
-    /* soft cutoff: full weight well inside reach, gone just past it —
-       a hard if(d <= reach) is what produced the pasted-tile look */
-    float lo = reach * 0.55;
-    float hi = max(reach * 1.05, lo + 1e-4);
-    float w  = (1.0 - smoothstep(lo, hi, d)) * (q + 0.015);
-
-    num += w * sc;
-    den += w;
+  /* uvd = uv - dir·H(uvd), damped so a steep slope folds instead of ringing.
+     H is terraced here, so the solution lands on a plateau and neighbouring
+     plateaus tear apart at the riser between them. */
+  vec2 uvd = uv;
+  for(int i = 0; i < 4; i++){
+    float h  = streakH(tex, uvd, bias, gamma);
+    float hq = floor(h * levels) / levels;
+    uvd = mix(uvd, uv - dir * (hq * amp), 0.7);
   }
-  vec3 streaked = clamp(num / max(den, 1e-4), 0.0, 1.0);
-  return mix(c, streaked, amt);
+
+  /* One sharp read at the displaced point — no averaging along the path. The
+     path average was the other half of the resemblance to the afterimage: it
+     put blur where the stretch should be. Magnification does the stretching
+     on its own wherever the displacement compresses neighbouring pixels
+     together, and it keeps the grain, which is what makes it legible. */
+  vec3 col = toSRGB(texture2D(tex, clamp(uvd, 0.0008, 0.9992)).rgb);
+
+  /* Relief, not engraving. A single key over the normal is what produced the
+     etched look: it lights whatever is in the height field, so at grain scale
+     it embosses noise. Depth needs the cues a real surface gives, all taken
+     from the same smooth terrain the displacement ran on so they agree:
+
+       key     one light across the height normal — slopes facing it lift
+       cavity  height against a far broader average; below it is a hollow,
+               and hollows are where light does not reach. This is the cue
+               that actually reads as depth rather than as texture
+       lift    raised ground sits a shade nearer than sunken ground
+       spec    a glint on the steepest slopes only, so ridges keep an edge */
+  float hHere  = streakH(tex, uv, bias, gamma);
+  float hWide  = streakH(tex, uv, bias + 2.2, gamma);
+  float cavity = clamp((hHere - hWide) * 2.8 + 0.5, 0.0, 1.0);
+
+  vec3  n    = normalize(vec3(-grad * 6.5, 1.0));
+  vec3  lgt  = normalize(vec3(-0.45, 0.55, 0.70));
+  float key  = clamp(dot(n, lgt), 0.0, 1.0);
+  float spec = pow(key, 14.0) * smoothstep(0.02, 0.20, slope);
+
+  float shade = mix(0.80, 1.18, key)
+              * mix(0.84, 1.08, cavity)
+              * mix(0.96, 1.05, hHere);
+  col = col * mix(1.0, shade, amt * 0.9) + spec * 0.10 * amt;
+
+  /* The risers. Where two terraces meet, the height steps and the surface has
+     a wall — draw it, or the terracing only shows as a warp and the plate
+     goes back to reading soft. This is the line that separates Hwanggok from
+     Midore at a glance: one has edges, the other has none. */
+  float qC    = floor(hHere * levels);
+  float cliff = clamp(abs(floor(hR * levels) - qC) + abs(floor(hU * levels) - qC), 0.0, 1.0);
+  col = mix(col, col * 0.52, cliff * 0.55 * amt);
+  col += cliff * key * 0.07 * amt;
+
+  return mix(c, clamp(col, 0.0, 1.0), amt);
 }
 
 /* ---- 7 · STREAK, hero variant -------------------------------------------
@@ -349,31 +399,53 @@ vec3 modeStreak(sampler2D tex, vec2 uv, vec2 planePx, float t, float seed, vec3 
 vec3 modeStreakLite(sampler2D tex, vec2 uv, vec2 planePx, float t, float seed, vec3 c){
   float amt = 0.34 + 0.54 * smoothstep(0.02, 0.55, t);
 
-  float rLen  = hash11(seed * 71.3 + 3.1);
+  float rAmp  = hash11(seed * 71.3 + 3.1);
   float rTilt = hash11(seed * 37.7 + 57.3);
 
-  float maxLen = mix(0.020, 0.115, amt) * mix(0.72, 1.34, rLen);
-  float tilt   = (rTilt - 0.5) * 0.10;
-  vec2  dir    = normalize(vec2(1.0, tilt * planePx.x / max(planePx.y, 1.0)));
+  float gamma  = 1.45;
+  float amp    = mix(0.020, 0.070, amt) * mix(0.80, 1.28, rAmp);
+  float tilt   = (rTilt - 0.5) * 0.34;
+  float levels = mix(52.0, 9.0, amt);   /* terraced, as in the full version */
+  vec2  head   = normalize(vec2(1.0, tilt * planePx.x / max(planePx.y, 1.0)));
 
-  const int TAPS = 14;
-  float stepUv = maxLen / float(TAPS);
+  vec2  px   = 1.0 / max(planePx, vec2(1.0));
+  vec2  e    = px * 5.0;
+  float bias = 3.2;
 
-  vec3  num = vec3(0.0);
-  float den = 0.0;
-  for(int i = 0; i < TAPS; i++){
-    float d   = float(i) * stepUv;
-    vec2  suv = clamp(uv + dir * d, 0.0008, 0.9992);
-    vec3  sc  = toSRGB(texture2D(tex, suv, 1.2).rgb);
-    float q   = pow(clamp(luma(sc), 0.0, 1.0), 1.7);
-    float reach = q * maxLen;
-    float lo = reach * 0.55;
-    float hi = max(reach * 1.05, lo + 1e-4);
-    float w  = (1.0 - smoothstep(lo, hi, d)) * (q + 0.015);
-    num += w * sc;
-    den += w;
+  float hR = streakH(tex, uv + vec2(e.x, 0.0), bias, gamma);
+  float hL = streakH(tex, uv - vec2(e.x, 0.0), bias, gamma);
+  float hU = streakH(tex, uv + vec2(0.0, e.y), bias, gamma);
+  float hD = streakH(tex, uv - vec2(0.0, e.y), bias, gamma);
+  vec2  grad  = vec2(hR - hL, hU - hD);
+  float slope = length(grad);
+
+  vec2 gdir = grad / max(slope, 1e-4);
+  vec2 dir  = normalize(mix(head, gdir, 0.38 * smoothstep(0.010, 0.16, slope)));
+
+  vec2 uvd = uv;
+  for(int i = 0; i < 2; i++){
+    float h  = streakH(tex, uvd, bias, gamma);
+    float hq = floor(h * levels) / levels;
+    uvd = mix(uvd, uv - dir * (hq * amp), 0.85);
   }
-  return mix(c, clamp(num / max(den, 1e-4), 0.0, 1.0), amt);
+
+  /* one sharp read, as in the full version — no path average */
+  vec3 col = toSRGB(texture2D(tex, clamp(uvd, 0.0008, 0.9992)).rgb);
+
+  /* same relief cues as the full version, one texture read cheaper */
+  float hHere  = streakH(tex, uv, bias, gamma);
+  float hWide  = streakH(tex, uv, bias + 2.2, gamma);
+  float cavity = clamp((hHere - hWide) * 2.8 + 0.5, 0.0, 1.0);
+
+  vec3  n   = normalize(vec3(-grad * 6.5, 1.0));
+  float key = clamp(dot(n, normalize(vec3(-0.45, 0.55, 0.70))), 0.0, 1.0);
+  col *= mix(1.0, mix(0.82, 1.16, key) * mix(0.86, 1.06, cavity), amt * 0.85);
+
+  float qC    = floor(hHere * levels);
+  float cliff = clamp(abs(floor(hR * levels) - qC) + abs(floor(hU * levels) - qC), 0.0, 1.0);
+  col = mix(col, col * 0.58, cliff * 0.5 * amt);
+
+  return mix(c, clamp(col, 0.0, 1.0), amt);
 }
 
 /* ---- 8 · AFTERIMAGE — Midore --------------------------------------------
@@ -419,7 +491,14 @@ vec3 modeAfterimage(sampler2D tex, vec2 uv, vec2 planePx, float t, float time, v
 export const DECOMPOSE = /* glsl */`
 vec3 decompose(sampler2D tex, vec2 uv, vec2 planePx, float t, float time, float mode, float seed){
   /* mode 5 — no treatment at all. The exhibition views are documentation of
-     the works, not works themselves; taking them apart says nothing. */
+     the works, not works themselves; taking them apart says nothing.
+
+     This early return is what makes ANGLE log "X4000: potentially
+     uninitialized variable (f_decompose)" on D3D: it rewrites the function
+     with a single output variable and cannot prove every path writes it.
+     The warning is cosmetic — both paths do write — and wrapping the return
+     in a block does not silence it; only collapsing the whole function to one
+     exit would, which is not worth the churn for a message no user sees. */
   if(mode > 4.5 && mode < 5.5) return clamp(toSRGB(texture2D(tex, uv).rgb), 0.0, 1.0);
 
   bool isDither = mode < 0.5;

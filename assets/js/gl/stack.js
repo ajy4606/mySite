@@ -8,10 +8,17 @@
    ============================================================ */
 
 import * as THREE from '../../vendor/three.module.min.js';
-import { VERT, FRAG_PLATE } from './shaders.js?v=20260811-4';
+import { VERT, FRAG_PLATE } from './shaders.js?v=20260812-4';
 
 const lerp = (a, b, t) => a + (b - a) * t;
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+/* Seconds for a hovered sheet to fill from rest to fully decomposed, and to
+   drain back once the cursor leaves. The fill is deliberately long: the point
+   is watching the work come apart, not arriving at a state. Draining is
+   quicker — leaving should read as a release, not as a second animation. */
+const T_FILL  = 2.4;
+const T_DRAIN = 0.8;
 
 /* Kept in step with the identical helper in delaminate.js, so a plate combs
    the same way in the hero as it does in the viewer. FNV-1a. */
@@ -54,9 +61,21 @@ export function createStack(opts){
   const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 40);
   camera.position.z = 3.4;
 
+  /* The stack sits a little high so there is air under it for the label. When
+     the fan opens, the front sheet also travels upward — far enough that its
+     top edge used to leave the frame. It gets that height back by sliding the
+     whole group down as it opens; the drop is small enough that the label
+     underneath keeps its air. See layout() for the size that has to fit. */
+  const GROUP_Y  = 0.10;
+  const FAN_DROP = 0.09;
+  /* Vertical travel per step of the open fan. Read by both targetFor and
+     layout() — if these two disagree the sheet is sized against a lift it
+     does not actually make, and the frame either clips or wastes space. */
+  const FAN_Y = 0.105;
+
   const group = new THREE.Group();
   group.rotation.set(0.045, -0.10, 0);
-  group.position.y = 0.10;          // leave air under the stack for the label
+  group.position.y = GROUP_Y;
   scene.add(group);
 
   const N = items.length;
@@ -134,7 +153,7 @@ export function createStack(opts){
     const k = slot - (N - 1) / 2;
     const sx = spread, sy = 1 + (1 - spread) * 0.9;
     const tight = { x: k * 0.055 * sx, y: -k * 0.038 * sy, z: -slot * 0.100, rz: (slot % 2 ? 1 : -1) * 0.006 };
-    const open  = { x: k * 0.200 * sx, y: -k * 0.125 * sy, z: -slot * 0.340, rz: (slot % 2 ? 1 : -1) * 0.026 };
+    const open  = { x: k * 0.200 * sx, y: -k * FAN_Y * sy, z: -slot * 0.340, rz: (slot % 2 ? 1 : -1) * 0.026 };
     return {
       x:  lerp(tight.x,  open.x,  fan),
       y:  lerp(tight.y,  open.y,  fan),
@@ -164,12 +183,21 @@ export function createStack(opts){
     // how much of the frame a sheet may occupy
     const visH = 2 * Math.tan((camera.fov * Math.PI / 180) / 2) * camera.position.z;
     const visW = visH * camera.aspect;
-    const boxH = visH * (W < 760 ? 0.58 : 0.70);
     const boxW = visW * (W < 760 ? 0.72 : 0.56);
     const pxPerUnit = (H / visH) * dpr;
 
     // 16:9 and wider keep the full spread; a phone gets about a third of it
     spread = Math.min(1, camera.aspect / 1.55);
+
+    /* A sheet has to fit the frame at its highest, not at rest. The fan lifts
+       the front one by half the pile's vertical travel, and a narrow frame
+       moves the spread onto this axis, so the lift grows as the window
+       narrows — which is why a phone clipped worse than a desktop. Size the
+       sheet against that worst case, after the group's own slide down. */
+    const sy = 1 + (1 - spread) * 0.9;
+    const fanLift = ((N - 1) / 2) * FAN_Y * sy;
+    const headroom = visH / 2 - 0.05 - fanLift - (GROUP_Y - FAN_DROP);
+    const boxH = Math.min(visH * (W < 760 ? 0.58 : 0.70), headroom * 2);
 
     sheets.forEach(m => {
       const a = m.userData.aspect;
@@ -478,6 +506,8 @@ export function createStack(opts){
     group.rotation.y = -0.10 + ptr.x * 0.11;
     group.rotation.x =  0.045 + ptr.y * 0.06;
     group.position.x = ptr.x * 0.06;
+    /* opening the fan sends the front sheet up; the pile gives that back */
+    group.position.y = GROUP_Y - FAN_DROP * fan;
 
     hovered = ptr.inside ? pick() : -1;
 
@@ -489,19 +519,16 @@ export function createStack(opts){
       if(u.flying === 'out'){
         tgt = { x:u.cur.x + 0.10, y:u.cur.y + 0.42, z: 2.6, rz:u.cur.rz - 0.05, op:0, dim:0, t:0.55 };
       }
-      /* Hovering a sheet runs that work through its own decomposition — the
-         dither, the drain, the data, the iron. Far enough along to actually
-         read, since at a whisper it was indistinguishable from the print. */
+      /* Hovering a sheet runs that work all the way through its own
+         decomposition — the dither, the drain, the data, the iron — and holds
+         there. Each series stops where its own treatment ends, so the same
+         gesture reads differently on every plate. */
       /* Only mode 5 means "no treatment". Testing `mode > 4.5` pinned every
          mode above it to zero too, which is why contour never showed here. */
       const mode = m.material.uniforms.uMode.value;
       const untreated = mode > 4.5 && mode < 5.5;
       if(u.i === hovered && !u.flying && !untreated){
-        /* Midore now reaches the same UNARRIVED 100% state as its detail
-           viewer. The shader still preserves the complete photograph; only
-           its temporal layers travel to their full authored distance. */
-        const hoverT = mode > 7.5 ? 1.00 : (mode > 1.5 && mode < 2.5 ? 0.40 : 0.62);
-        tgt = Object.assign({}, tgt, { t: hoverT });
+        tgt = Object.assign({}, tgt, { t: 1 });
       }
       if(untreated) tgt = Object.assign({}, tgt, { t: 0 });
 
@@ -513,7 +540,12 @@ export function createStack(opts){
       u.cur.rz = lerp(u.cur.rz, tgt.rz, k);
       u.cur.op = lerp(u.cur.op, tgt.op, ks);
       u.cur.dim= lerp(u.cur.dim,tgt.dim,ks);
-      u.cur.t  = lerp(u.cur.t,  tgt.t,  ks);
+
+      /* t fills at a fixed rate rather than easing toward the target. An
+         exponential approach spends its whole tail near the end: it crawls
+         the last few percent and never reads as having arrived at 100%. */
+      const step = dt / (tgt.t > u.cur.t ? T_FILL : T_DRAIN);
+      u.cur.t += clamp(tgt.t - u.cur.t, -step, step);
 
       m.position.set(u.cur.x, u.cur.y, u.cur.z);
       m.rotation.z = u.cur.rz;
@@ -551,6 +583,9 @@ export function createStack(opts){
     next: () => step(1),
     previous: () => step(-1),
     current: () => order[0],
+    /* re-run onChange without moving the stack — the caption is built from
+       the current language, so switching KO/EN has to repaint it */
+    refresh: () => emit(),
     pause(){ running = false; },
     resume(){ running = true; cycleAt = performance.now(); },
     destroy(){

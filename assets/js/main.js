@@ -4,8 +4,8 @@
 
 /* Bump this query whenever stack.js changes — assets are served with a
    one-hour cache and browsers will otherwise keep the old module. */
-import { createStack }  from './gl/stack.js?v=20260811-4';
-import { viewer }       from './gl/delaminate.js?v=20260811-4';
+import { createStack }  from './gl/stack.js?v=20260812-4';
+import { viewer }       from './gl/delaminate.js?v=20260812-4';
 
 const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -31,12 +31,16 @@ const MODE_NONE = 5;
    first plate. Changing one means changing it in three places: here, and the
    index row's data-peek + thumb and the grid card in index.html. Midore's is
    also the share image, so og:image and the preload hint follow it too. */
+/* `meta` says what each work is made of — nothing else. It used to mix
+   registers: a year for one, a process for another, an award for a third,
+   so the five captions did not read as one list. Years live on the project
+   page, the award lives there and in the CV. */
 const WORKS = [
-  { title:'Midore',             kr:'미도래',          meta:'2024— · Ongoing',                mode:8, src:'assets/works/midore/13.jpg',             href:'#/midore' },              // Midore #14
-  { title:'Full Metal Plant',   kr:'풀 메탈 플랜트',   meta:'Generative model · 3D render',   mode:3, src:'assets/works/full-metal-plant/01.jpg',   href:'#/full-metal-plant' },    // Full Metal Plant #1
-  { title:'Hwanggok_Colorized', kr:'황곡_컬러라이즈드', meta:'Generative colorization',        mode:1, src:'assets/works/hwanggok-colorized/10.jpg', href:'#/hwanggok-colorized' },  // Hwanggok_Colorized #68
-  { title:'Hwanggok',           kr:'황곡',            meta:'19th Sajinbipyong Award · 2022',  mode:7, src:'assets/works/hwanggok/03.jpg',           href:'#/hwanggok' },            // Hwanggok #7
-  { title:'Installation',       kr:'전시 전경',        meta:'Exhibition views · 2020—',       mode:5, src:'assets/works/installation/26.jpg',       href:'#/installation' }   // Installation Fig. 17
+  { title:'Midore',             kr:'미도래',          meta:'Photograph · 3D render · Generative model', mode:8, src:'assets/works/midore/13.jpg',             href:'#/midore' },              // Midore #14
+  { title:'Full Metal Plant',   kr:'풀 메탈 플랜트',   meta:'Generative model · 3D render',              mode:3, src:'assets/works/full-metal-plant/01.jpg',   href:'#/full-metal-plant' },    // Full Metal Plant #1
+  { title:'Hwanggok_Colorized', kr:'황곡_컬러라이즈드', meta:'Generative colorization',                   mode:1, src:'assets/works/hwanggok-colorized/05.jpg', href:'#/hwanggok-colorized' },  // Hwanggok_Colorized #11
+  { title:'Hwanggok',           kr:'황곡',            meta:'Program-generated · Cut & assembly',        mode:7, src:'assets/works/hwanggok/03.jpg',           href:'#/hwanggok' },            // Hwanggok #7
+  { title:'Installation',       kr:'전시 전경',        meta:'Exhibition views',                          mode:5, src:'assets/works/installation/26.jpg',       href:'#/installation' }         // Installation Fig. 17
 ];
 
 /* ---- conceptual threads -------------------------------------------------
@@ -67,6 +71,9 @@ function setLang(l){
   doc.setAttribute('lang', l === 'en' ? 'en' : 'ko');
   $$('.lang-tog button').forEach(b => b.classList.toggle('on', b.dataset.lang === l));
   try{ localStorage.setItem(LANG_KEY, l); }catch(e){}
+  /* the hero caption is composed in JS, so it does not follow the .l-ko/.l-en
+     spans the rest of the page uses and has to be repainted by hand */
+  if(stack) stack.refresh();
   requestAnimationFrame(() => { measure(); paintStrata(); });
 }
 
@@ -507,7 +514,13 @@ function initHero(onProgress){
       setTimeout(() => {
         idx.textContent = `${String(i+1).padStart(2,'0')} / ${String(WORKS.length).padStart(2,'0')}`;
         ttl.textContent = item.title;
-        sub.textContent = `${item.kr} — ${item.meta}`;
+        /* The Korean title is the original, not a translation of the English
+           one — for four of the five it is only a transliteration of it, so
+           「풀 메탈 플랜트」 beside "Full Metal Plant" tells an English reader
+           nothing. Dropped in EN rather than translated. */
+        sub.textContent = currentLang() === 'ko'
+          ? `${item.kr} — ${item.meta}`
+          : item.meta;
         now.parentElement.setAttribute('href', item.href);
         now.classList.remove('swapping');
       }, REDUCED ? 0 : 190);

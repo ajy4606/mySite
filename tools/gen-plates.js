@@ -63,6 +63,18 @@ function plate(item, cls, label, num){
         </figure>`;
 }
 
+/* Installation views keep only the clickable image. Work captions, figure
+   numbers, and treatment labels belong to the artwork pages, not this archive. */
+function installationPlate(item, num){
+  const ar = (item.w / item.h).toFixed(4);
+  const alt = `installation ${num}`;
+  return `        <figure class="plate rv" style="--ar:${ar}">
+          <div class="strata" style="--ar:${ar}" data-src="${item.file}" data-orig="${esc(item.orig)}">
+            <img src="${item.file}" alt="${esc(alt)}" loading="lazy" width="${item.w}" height="${item.h}">
+          </div>
+        </figure>`;
+}
+
 /* rhythm for the single-column project pages */
 const CYCLE = ['plate--wide', 'pair', 'plate--right', 'plate--left', 'pair', 'plate--inset'];
 
@@ -132,18 +144,20 @@ function applyOrder(slug, items){
    포스터를 따로 모으지 않고 전시별로 사이사이 두는 것이 작가님 배열입니다
    (포스터 → 그 전시의 전경). 여기 없는 번호는 뒤에 번호순으로 붙습니다.
    새 이미지를 넣어 순서를 바꾸려면 이 배열만 고치세요. */
-const INSTALL_ORDER = [
-  '42','14','47','21','23','22','37','18','20','19','40','39','43',
-  '32','27','29','26','46','25','45','41','05'
-];
+/* Installation originals are named 1.jpg, 2.jpg, ... and may include a
+   variant such as 16_2.jpg. Keep the newest/highest number first without a
+   hand-maintained list, so newly added photographs land in the right place. */
+function installationOrder(item){
+  const m = String(item.orig || '').match(/^(\d+)(?:[_-](\d+))?/);
+  return m ? [Number(m[1]), Number(m[2] || 0)] : [-1, -1];
+}
 
 function buildInstallation(items){
-  const byN  = new Map(items.map(x => [x.n, x]));
-  const seen = new Set();
-  const seq  = [];
-  for(const n of INSTALL_ORDER){ if(byN.has(n)){ seq.push(byN.get(n)); seen.add(n); } }
-  for(const x of items){ if(!seen.has(x.n)) seq.push(x); }
-  return seq.map((x, i) => plate(x, '', 'Fig.', String(i + 1).padStart(2, '0'))).join('\n');
+  const seq = [...items].sort((a, b) => {
+    const ak = installationOrder(a), bk = installationOrder(b);
+    return bk[0] - ak[0] || bk[1] - ak[1] || String(b.orig).localeCompare(String(a.orig));
+  });
+  return seq.map((x, i) => installationPlate(x, String(i + 1).padStart(2, '0'))).join('\n');
 }
 
 /* 전시 전경은 순서와 캡션을 손으로 맞춰 둔 상태라 기본으로는 건드리지 않습니다.
