@@ -211,6 +211,8 @@ export function createStack(opts){
   /* ---- pointer --------------------------------------------------------- */
   const ptr = { x:0, y:0, tx:0, ty:0, inside:false };
   const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
+  const coarsePointer = window.matchMedia('(hover: none) and (pointer: coarse)');
+  const usesMobileAutoplayEffect = () => innerWidth <= 820 || coarsePointer.matches;
   const ray = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
   let hovered = -1;
@@ -495,6 +497,14 @@ export function createStack(opts){
       advance();
     }
 
+    /* A phone has no hover state, so the current work quietly travels through
+       its own treatment during the same interval that leads to autoplay. It
+       reaches the complete state just before the sheet advances. Manual
+       navigation resets cycleAt and therefore starts the next work cleanly. */
+    const mobileAutoT = !reduced && !autoPaused && !transitioning && usesMobileAutoplayEffect()
+      ? clamp((now - cycleAt) / (CYCLE - 250), 0, 1)
+      : null;
+
     /* the fan answers the viewer directly, so it stays available even under
        reduced motion — only the unattended drift and cycling are dropped */
     fan = lerp(fan, Math.max(fanTarget, scrollFan), 1 - Math.pow(0.001, dt));
@@ -529,6 +539,9 @@ export function createStack(opts){
       const untreated = mode > 4.5 && mode < 5.5;
       if(u.i === hovered && !u.flying && !untreated){
         tgt = Object.assign({}, tgt, { t: 1 });
+      }
+      if(mobileAutoT !== null && u.i === order[0] && !u.flying && !untreated){
+        tgt = Object.assign({}, tgt, { t: Math.max(tgt.t, mobileAutoT) });
       }
       if(untreated) tgt = Object.assign({}, tgt, { t: 0 });
 
