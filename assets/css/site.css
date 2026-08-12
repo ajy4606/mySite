@@ -1050,6 +1050,12 @@ html[data-lang="en"] .row .kr{visibility:hidden}
   .strata{cursor:pointer}
   .strata.split > img{opacity:1}
   .strata i{display:none}
+  /* Touch browsers can keep :hover active after a tap. On a work page that
+     left the DELAMINATE badge and registration frame sitting over the art.
+     Keep the tap-to-open behaviour, but remove every cursor-style overlay. */
+  .plate .tag{display:none}
+  .strata::after{content:none;display:none}
+  .strata:focus-visible{outline:none}
 }
 @media (max-width:640px){
   body{font-size:14.5px}
