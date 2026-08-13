@@ -194,9 +194,10 @@ body.scrolled .hdr{
 
 /* progress hairline */
 .prog{
-  position:fixed;top:0;left:0;height:1px;z-index:90;
+  position:absolute;top:0;left:0;height:1px;z-index:1;
   background:var(--ink);width:0;
   transition:opacity .3s var(--ease);
+  pointer-events:none;
 }
 
 /* ---------- 6. main / view switching ------------------------------------ */
@@ -502,6 +503,7 @@ html[data-lang="en"] .row .kr{visibility:hidden}
 .plate--inset {width:min(100%,72%,var(--fit));margin-left:auto;margin-right:auto}
 .plate--left  {width:min(100%,58%,var(--fit))}
 .plate--right {width:min(100%,52%,var(--fit));margin-left:auto}
+.plate--feature{width:min(100%,76%,var(--fit));margin-left:auto}
 .plate--tall  {width:min(100%,44%,var(--fit));margin-left:auto;margin-right:auto}
 
 /* two plates read side by side — breaks the single column's monotony.
@@ -979,10 +981,18 @@ html[data-lang="en"] .row .kr{visibility:hidden}
   /* the asymmetric widths collapse to one column here, but the height cap has
      to survive — a landscape phone is exactly where a plate would otherwise
      stand taller than the screen */
-  .plate--left,.plate--right,.plate--inset,.plate--tall{width:min(100%,var(--fit))}
+  .plate--left,.plate--right,.plate--inset,.plate--tall,.plate--feature{width:min(100%,var(--fit))}
 }
 @media (max-width:820px){
   :root{--nav-h:52px}
+  body{overflow-x:clip}
+  /* iOS Safari 26 can paint fixed layers against a stale visual viewport
+     during a momentum flick. Sticky stays in the document's scroll layer;
+     the negative margin preserves the original overlaid-header composition. */
+  .hdr{
+    position:sticky;top:0;
+    margin-bottom:calc(-1 * var(--nav-h));
+  }
   .nav{display:none}
   .burger{display:block}
   /* The difference blend keeps the wordmark legible over big flat images, but
@@ -990,9 +1000,9 @@ html[data-lang="en"] .row .kr{visibility:hidden}
      scrolled, give the bar its own ground instead. */
   body.scrolled .hdr{
     mix-blend-mode:normal;
-    background:rgba(10,10,11,.88);
-    backdrop-filter:saturate(140%) blur(10px);
-    -webkit-backdrop-filter:saturate(140%) blur(10px);
+    background:rgba(10,10,11,.96);
+    backdrop-filter:none;
+    -webkit-backdrop-filter:none;
   }
   /* thumbs, not cursors — the header controls were 11–26px tall */
   .burger{min-height:44px;display:flex;align-items:center;padding-left:16px}

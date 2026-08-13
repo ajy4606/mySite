@@ -53,8 +53,10 @@ function plate(item, cls, label, num){
   const ar = (item.w / item.h).toFixed(4);
   const n  = num || item.n;
   const alt = `${item.project.replace(/-/g, ' ')} ${n}`;
+  const featured = PROJECT_CLASS[item.project]?.[workNo(item)] || '';
+  const classes = [cls, featured].filter(Boolean).join(' ');
   /* --ar sits on the figure too: the Installation grid sizes its rows from it */
-  return `        <figure class="plate${cls ? ' ' + cls : ''} rv" style="--ar:${ar}">
+  return `        <figure class="plate${classes ? ' ' + classes : ''} rv" style="--ar:${ar}">
           <div class="strata" style="--ar:${ar}" data-src="${item.file}" data-orig="${esc(item.orig)}">
             <img src="${item.file}" alt="${esc(alt)}" loading="lazy" width="${item.w}" height="${item.h}">
           </div>
@@ -114,6 +116,13 @@ function buildProject(items){
    황곡: 《황곡》 #7을 맨 앞으로(#3과 맞바꿈), #36을 #35보다 앞으로. */
 const PROJECT_ORDER = {
   'hwanggok': ['#7', '#6', '#3', '#9', '#21', '#22', '#25', '#34', '#36', '#35']
+};
+
+/* A small number of plates need a deliberate scale outside the repeating
+   layout cycle. Keep that decision in the generator so rebuilding index.html
+   does not silently return the work to its former size. */
+const PROJECT_CLASS = {
+  'hwanggok': { '#9': 'plate--feature' }
 };
 
 /* 원본 파일 이름 앞머리의 "… #7, 60x80cm, …" 에서 작품 번호를 읽습니다. */
