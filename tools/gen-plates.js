@@ -91,7 +91,9 @@ function buildProject(items){
   while(i < items.length){
     const step = CYCLE[c++ % CYCLE.length];
     if(step === 'pair' && i + 1 < items.length){
-      out.push('        <div class="plate-pair">');
+      const pairKey = `${items[i].project}:${workNo(items[i])}|${workNo(items[i+1])}`;
+      const pairClass = PROJECT_PAIR_CLASS[pairKey] || '';
+      out.push(`        <div class="plate-pair${pairClass ? ' ' + pairClass : ''}">`);
       out.push(plate(items[i], '', 'Pl.', pos()).replace(/^/gm, '  ')); i++;
       out.push(plate(items[i], '', 'Pl.', pos()).replace(/^/gm, '  ')); i++;
       out.push('        </div>');
@@ -115,14 +117,22 @@ function buildProject(items){
 
    황곡: 《황곡》 #7을 맨 앞으로(#3과 맞바꿈), #36을 #35보다 앞으로. */
 const PROJECT_ORDER = {
-  'hwanggok': ['#7', '#6', '#3', '#9', '#21', '#22', '#25', '#34', '#36', '#35']
+  'hwanggok': ['#7', '#6', '#3', '#9', '#21', '#22', '#25', '#34', '#36', '#35'],
+  'midore': ['#1', '#2', '#3', '#4', '#5', '#6', '#7', '#8', '#9', '#11', '#12', '#13', '#14', '#18', '#19', '#20', '#24', '#22', '#21', '#23']
 };
 
 /* A small number of plates need a deliberate scale outside the repeating
    layout cycle. Keep that decision in the generator so rebuilding index.html
    does not silently return the work to its former size. */
 const PROJECT_CLASS = {
-  'hwanggok': { '#9': 'plate--feature' }
+  'hwanggok': { '#9': 'plate--feature' },
+  'midore': { '#14': 'plate--feature-center' }
+};
+
+/* Unequal aspect ratios can share a baseline without sharing a width. The
+   3:4 columns make Midore #11 (square) and #12 (4:3) exactly the same height. */
+const PROJECT_PAIR_CLASS = {
+  'midore:#11|#12': 'plate-pair--equal-height'
 };
 
 /* 원본 파일 이름 앞머리의 "… #7, 60x80cm, …" 에서 작품 번호를 읽습니다. */
