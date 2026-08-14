@@ -14,9 +14,12 @@ if(!fs.existsSync(manifestPath)){
   console.error('  먼저 이미지 처리를 돌리세요:  powershell -File tools\\build-images.ps1\n');
   process.exit(1);
 }
-const manifest = JSON.parse(
-  fs.readFileSync(manifestPath, 'utf8').replace(/^\uFEFF/, '')
-);
+let manifestText = fs.readFileSync(manifestPath, 'utf8').replace(/^\uFEFF/, '');
+/* Some PowerShell versions have written the formatted JSON with literal
+   "\\n" separators. Accept that legacy form so the layout pipeline remains
+   usable without touching the image manifest by hand. */
+if(manifestText.startsWith('[\\n')) manifestText = manifestText.replace(/\\n/g, '\n');
+const manifest = JSON.parse(manifestText);
 
 const TODO_WORK = '<span class="todo">매체 · 크기 입력</span>';
 
@@ -80,11 +83,63 @@ function installationPlate(item, num){
 /* rhythm for the single-column project pages */
 const CYCLE = ['plate--wide', 'pair', 'plate--right', 'plate--left', 'pair', 'plate--inset'];
 
+/* Midore is edited as a chromatic sequence rather than by file number:
+   cold blue -> overgrowth and traces -> warm material -> yellow terrain ->
+   living green and water -> monochrome -> night. */
+const PROJECT_LAYOUT = {
+  'midore': [
+    { works:['#1'], cls:'plate--midore-opener' },
+    { works:['#3','#5'], pair:'plate-pair--midore-cool' },
+    { works:['#2'], cls:'plate--midore-right-large' },
+    { works:['#4','#8'], pair:'plate-pair--midore-traces' },
+    { works:['#11'], cls:'plate--left' },
+    { works:['#7'], cls:'plate--right' },
+    { works:['#6','#19'], pair:'plate-pair--midore-material' },
+    { works:['#20'], cls:'plate--tall' },
+    { works:['#9'], cls:'plate--wide' },
+    { works:['#21','#13'], pair:'plate-pair--midore-earth' },
+    { works:['#14'], cls:'plate--midore-anchor' },
+    { works:['#22'], cls:'plate--midore-right-large' },
+    { works:['#23'], cls:'plate--wide' },
+    { works:['#12','#18'], pair:'plate-pair--midore-mono' },
+    { works:['#24'], cls:'plate--midore-closing' }
+  ]
+};
+
+function buildProjectLayout(items, layout){
+  const byWork = new Map(items.map(x => [workNo(x), x]));
+  const used = new Set();
+  const out = [];
+  let position = 1;
+  const pos = () => String(position++).padStart(2, '0');
+
+  for(const group of layout){
+    const selected = group.works.map(w => byWork.get(w)).filter(Boolean);
+    selected.forEach(x => used.add(x));
+    if(selected.length > 1){
+      out.push(`        <div class="plate-pair ${group.pair || ''}">`);
+      for(const item of selected) out.push(plate(item, '', 'Pl.', pos()).replace(/^/gm, '  '));
+      out.push('        </div>');
+    }else if(selected.length === 1){
+      out.push(plate(selected[0], group.cls || 'plate--wide', 'Pl.', pos()));
+    }
+  }
+
+  /* New images are never dropped: they enter after the curated sequence and
+     can be assigned deliberately on the next edit. */
+  for(const item of items){
+    if(!used.has(item)) out.push(plate(item, 'plate--wide', 'Pl.', pos()));
+  }
+  return out.join('\n');
+}
+
 /* Pl. 번호는 파일 번호가 아니라 페이지에서의 자리입니다. 자리를 바꾸기 전에는
    둘이 같았지만(파일 01이 첫 도판), PROJECT_ORDER로 순서를 바꾸면 갈라집니다.
    전시 전경이 이미 자리 기준으로 매기고 있어서 작품 페이지도 같게 맞춥니다 —
    그래야 Pl. 01, 02, 03 … 이 끊기지 않고 이어집니다. */
 function buildProject(items){
+  const layout = PROJECT_LAYOUT[items[0]?.project];
+  if(layout) return buildProjectLayout(items, layout);
   const out = [];
   let i = 0, c = 0;
   const pos = () => String(i + 1).padStart(2, '0');
@@ -117,23 +172,21 @@ function buildProject(items){
 
    황곡: 《황곡》 #7을 맨 앞으로(#3과 맞바꿈), #36을 #35보다 앞으로. */
 const PROJECT_ORDER = {
-  'hwanggok': ['#7', '#6', '#3', '#9', '#21', '#22', '#25', '#34', '#36', '#35']
+  'hwanggok': ['#7', '#6', '#3', '#9', '#21', '#22', '#25', '#34', '#36', '#35'],
+  'midore': ['#1','#3','#5','#2','#4','#8','#11','#7','#6','#19','#20','#9','#21','#13','#14','#22','#23','#12','#18','#24']
 };
 
 /* A small number of plates need a deliberate scale outside the repeating
    layout cycle. Keep that decision in the generator so rebuilding index.html
    does not silently return the work to its former size. */
 const PROJECT_CLASS = {
-  'hwanggok': { '#9': 'plate--feature' },
-  'midore': { '#14': 'plate--midore-anchor' }
+  'hwanggok': { '#9': 'plate--feature' }
 };
 
 /* Midore #11 and #12 form an editorial transition: the second work carries
    more width while the pair shares a lower baseline instead of forcing equal
    image heights. */
-const PROJECT_PAIR_CLASS = {
-  'midore:#11|#12': 'plate-pair--midore-duet'
-};
+const PROJECT_PAIR_CLASS = {};
 
 /* 원본 파일 이름 앞머리의 "… #7, 60x80cm, …" 에서 작품 번호를 읽습니다. */
 function workNo(item){
