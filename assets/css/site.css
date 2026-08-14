@@ -313,8 +313,8 @@ body.is-leaving main{
 .band .lbl{grid-column:1 / span 2}
 .band .body{grid-column:4 / span 7}
 .band .body p.kr{
-  font-size:clamp(1.15rem,2.15vw,1.85rem);
-  font-weight:250;line-height:1.5;letter-spacing:-.024em;
+  font-size: clamp(1em, 1.2vw + 0.6rem, 1.3rem);
+  font-weight:250;line-height:2;letter-spacing:-.024em;
   color:var(--ink);
 }
 .band .body p.en{
