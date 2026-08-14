@@ -511,7 +511,7 @@ html[data-lang="en"] .row .kr{visibility:hidden}
   margin-top:clamp(28px,4vw,72px);
   margin-bottom:clamp(110px,12vw,210px);
 }
-.plate--midore-closing{width:min(100%,78%,var(--fit));margin-left:auto;margin-right:auto}
+.plate--midore-closing{width:min(100%,72%,var(--fit));margin-left:auto;margin-right:auto}
 .plate--tall  {width:min(100%,44%,var(--fit));margin-left:auto;margin-right:auto}
 
 /* two plates read side by side — breaks the single column's monotony.
