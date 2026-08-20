@@ -491,9 +491,14 @@ function initChrome(){
     if(ticking) return;
     ticking = true;
     requestAnimationFrame(() => {
-      const y = window.scrollY;
+      /* Safari reports elastic overscroll outside the document range. At the
+         bottom that value can oscillate while the visual viewport settles,
+         making the header progress line repeatedly overshoot and repaint.
+         Clamp both the viewport and position to the real scrollable range. */
+      const viewportH = document.documentElement.clientHeight || window.innerHeight;
+      const h = Math.max(0, document.documentElement.scrollHeight - viewportH);
+      const y = Math.min(h, Math.max(0, window.scrollY));
       document.body.classList.toggle('scrolled', y > 8);
-      const h = document.documentElement.scrollHeight - window.innerHeight;
       prog.style.width = h > 40 ? ((y / h) * 100).toFixed(2) + '%' : '0';
       prog.style.opacity = h > 40 && y > 8 ? '1' : '0';
       paintStrata();

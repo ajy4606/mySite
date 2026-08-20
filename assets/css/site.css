@@ -999,6 +999,10 @@ html[data-lang="en"] .row .kr{visibility:hidden}
 }
 @media (max-width:820px){
   :root{--nav-h:52px}
+  /* Stop the root scroller at its real ends. Without this, a hard upward or
+     downward flick can keep Safari's sticky/composited layers bouncing after
+     the content itself has already reached the edge. */
+  html,body{overscroll-behavior-y:none}
   body{overflow-x:clip}
   /* iOS Safari 26 can paint fixed layers against a stale visual viewport
      during a momentum flick. Sticky stays in the document's scroll layer;
