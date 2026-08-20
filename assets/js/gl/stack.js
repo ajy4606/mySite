@@ -295,7 +295,10 @@ export function createStack(opts){
   function resumeAuto(delay = 0){
     clearTimeout(autoTimer);
     const resume = () => {
-      if(ptr.inside || host.contains(document.activeElement)){
+      /* A tapped mobile control can retain focus long after the finger leaves.
+         Treating that sticky focus like desktop keyboard focus stopped both
+         autoplay and the no-hover treatment for the rest of the visit. */
+      if(ptr.inside || (!usesMobileAutoplayEffect() && host.contains(document.activeElement))){
         autoPaused = true;
         return;
       }
@@ -306,7 +309,7 @@ export function createStack(opts){
     else resume();
   }
 
-  function holdAuto(delay = 5000){
+  function holdAuto(delay = usesMobileAutoplayEffect() ? 850 : 5000){
     pauseAuto();
     resumeAuto(delay);
   }
@@ -463,9 +466,11 @@ export function createStack(opts){
     holdAuto();
   }, { passive:true });
 
-  host.addEventListener('focusin', pauseAuto);
+  host.addEventListener('focusin', () => {
+    if(!usesMobileAutoplayEffect()) pauseAuto();
+  });
   host.addEventListener('focusout', (e) => {
-    if(!host.contains(e.relatedTarget)) resumeAuto(900);
+    if(!usesMobileAutoplayEffect() && !host.contains(e.relatedTarget)) resumeAuto(900);
   });
   host.addEventListener('keydown', (e) => {
     if(e.key === 'ArrowRight' || e.key === 'ArrowDown'){
@@ -501,8 +506,13 @@ export function createStack(opts){
        its own treatment during the same interval that leads to autoplay. It
        reaches the complete state just before the sheet advances. Manual
        navigation resets cycleAt and therefore starts the next work cleanly. */
+    const mobileCycle = clamp((now - cycleAt) / (CYCLE - 250), 0, 1);
     const mobileAutoT = !reduced && !autoPaused && !transitioning && usesMobileAutoplayEffect()
-      ? clamp((now - cycleAt) / (CYCLE - 250), 0, 1)
+      /* Start above the almost-invisible rest state, then spend the full
+         interval revealing the work. The eased curve makes the treatment
+         legible in the first second without dumping the final effect on the
+         image as soon as the page opens. */
+      ? 0.20 + 0.80 * Math.pow(mobileCycle, 0.72)
       : null;
 
     /* the fan answers the viewer directly, so it stays available even under
