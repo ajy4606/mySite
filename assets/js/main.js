@@ -5,7 +5,7 @@
 /* Bump this query whenever stack.js changes — assets are served with a
    one-hour cache and browsers will otherwise keep the old module. */
 import { createStack }  from './gl/stack.js?v=20260820-1';
-import { viewer }       from './gl/delaminate.js?v=20260812-5';
+import { viewer }       from './gl/delaminate.js?v=20260904-2';
 
 const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];

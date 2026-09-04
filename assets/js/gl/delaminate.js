@@ -58,11 +58,14 @@ function build(){
     <div class="dlm-ui">
       <div class="dlm-top">
         <p class="dlm-cap"></p>
-        <button class="dlm-close" type="button">Close ✕ <span class="sr">(Esc)</span></button>
+        <div class="dlm-actions">
+          <button class="dlm-zoom-reset" type="button" aria-label="Reset zoom to 1× · 확대 초기화" title="Reset zoom to 1× · 확대 초기화">1×</button>
+          <button class="dlm-close" type="button">Close ✕ <span class="sr">(Esc)</span></button>
+        </div>
       </div>
       <div class="dlm-bot">
         <div class="dlm-read">
-          <span class="scale">물성 조절 · Viscosity — <span class="l-ko">드래그하여 층을 해체</span><span class="l-en">drag to take the layers apart</span></span>
+          <span class="scale">물성 조절 · Viscosity — <span class="dlm-desktop-instruction"><span class="l-ko">드래그하여 층을 해체</span><span class="l-en">drag to take the layers apart</span></span><span class="dlm-mobile-instruction"><span class="l-ko">핀치 확대 · 강도는 아래 바</span><span class="l-en">pinch zoom · use the bar</span></span></span>
           <span class="hint"></span>
           <span class="dlm-nav">
             <button class="prev" type="button">← Prev</button>
@@ -129,7 +132,9 @@ function init(){
     stages: [...root.querySelectorAll('.dlm-stages button')],
     prev:   root.querySelector('.prev'),
     next:   root.querySelector('.next'),
-    hint:   root.querySelector('.hint')
+    hint:   root.querySelector('.hint'),
+    bot:    root.querySelector('.dlm-bot'),
+    zoomReset: root.querySelector('.dlm-zoom-reset')
   };
 
   const state = {
@@ -138,6 +143,44 @@ function init(){
   };
 
   let pushed = false;              // whether we own a history entry
+
+  /* The image and the sharp mobile source share one view transform. Effects
+     stay on the WebGL mesh; zoom and pan belong to the act of looking, so the
+     same coordinates are also applied to the real <img> used at Source. */
+  const view = {
+    zoom:1, panX:0, panY:0,
+    baseW:1, baseH:1, baseY:0,
+    availW:1, availH:1, centreX:0, centreY:0
+  };
+  const ZOOM_MAX = 4;
+  const isMobileViewer = () => window.innerWidth < 700;
+
+  function clampView(){
+    if(view.zoom <= 1.001){
+      view.zoom = 1; view.panX = 0; view.panY = 0;
+      return;
+    }
+    const maxX = Math.max(0, (view.baseW * view.zoom - view.availW) / 2);
+    const maxY = Math.max(0, (view.baseH * view.zoom - view.availH) / 2);
+    view.panX = clamp(view.panX, -maxX, maxX);
+    view.panY = clamp(view.panY, -maxY, maxY);
+  }
+
+  function applyView(){
+    clampView();
+    mesh.scale.set(view.baseW * view.zoom, view.baseH * view.zoom, 1);
+    mesh.position.x = view.panX;
+    /* DOM y grows down; the orthographic scene's y grows up. */
+    mesh.position.y = view.baseY - view.panY;
+    source.style.transform = `translate3d(${view.panX.toFixed(2)}px,${view.panY.toFixed(2)}px,0) scale(${view.zoom.toFixed(4)})`;
+    root.classList.toggle('is-zoomed', view.zoom > 1.01);
+    paintHud();
+  }
+
+  function resetView(apply = true){
+    view.zoom = 1; view.panX = 0; view.panY = 0;
+    if(apply) applyView();
+  }
 
   function syncSourceView(){
     const intact = window.innerWidth < 700 && state.tTarget <= 0.001;
@@ -152,6 +195,7 @@ function init(){
   /* ---- sizing ---------------------------------------------------------- */
   function resize(){
     const W = window.innerWidth, H = window.innerHeight;
+    if(W >= 700) resetView(false);
     /* Interactive treatments stay below full retina resolution so every
        series can scrub smoothly. Plain lightboxes keep the higher ceiling. */
     const plain = state.mode > 4.5 && state.mode < 5.5;
@@ -166,15 +210,32 @@ function init(){
 
     const padX = W < 700 ? 20 : 80;
     const padT = W < 700 ? 74 : 96;    // caption row
-    const padB = W < 700 ? 168 : 150;  // track + stages
+    /* The mobile controls can wrap on a narrow or short phone. Measure their
+       real top edge instead of assuming the original 168px reservation, so
+       neither the sharp source nor the WebGL plate sits behind the controls. */
+    const mobileBot = W < 700 ? Math.max(168, H - ui.bot.getBoundingClientRect().top + 8) : 150;
+    const padB = W < 700 ? mobileBot : 150;
     const availW = Math.max(80, W - padX*2);
     const availH = Math.max(80, H - padT - padB);
 
     const s = Math.min(availW / state.aspect, availH);
     const w = s * state.aspect, h = s;
-    mesh.scale.set(w, h, 1);
-    mesh.position.y = (padB - padT) / 2;
+    view.baseW = w; view.baseH = h;
+    view.baseY = (padB - padT) / 2;
+    view.availW = availW; view.availH = availH;
+    view.centreX = W / 2;
+    view.centreY = H / 2 - view.baseY;
+    if(W < 700){
+      /* Size the sharp DOM source to the exact WebGL plate bounds. An
+         object-fit box looked aligned only for some aspect ratios and jumped
+         when the scrubber swapped Source for the treated canvas. */
+      source.style.left = `${((W - w) / 2).toFixed(2)}px`;
+      source.style.top = `${(view.centreY - h / 2).toFixed(2)}px`;
+      source.style.width = `${w.toFixed(2)}px`;
+      source.style.height = `${h.toFixed(2)}px`;
+    }
     mat.uniforms.uPlanePx.value.set(w * dpr, h * dpr);
+    applyView();
     syncSourceView();
   }
   window.addEventListener('resize', resize);
@@ -199,6 +260,7 @@ function init(){
       mat.uniforms.uTex.value = tex;
       mat.uniforms.uSeed.value = seedFor(item.src || String(nextIdx));
       state.aspect = tex.image.width / tex.image.height;
+      resetView(false);
       resize();
       /* Phones open on the intact source image. Starting from the fully
          decomposed shader state looked like compression damage on a small
@@ -281,17 +343,126 @@ function init(){
 
   /* ---- interaction ----------------------------------------------------- */
   let dragging = false, sx = 0, st = 0;
+  const touches = new Map();
+  let pinch = null, pan = null, gestureMoved = false;
+  let lastTapAt = 0, lastTapX = 0, lastTapY = 0;
+
+  const touchPair = () => [...touches.values()].slice(0, 2);
+  const distance = (a,b) => Math.hypot(b.x - a.x, b.y - a.y);
+  const midpoint = (a,b) => ({ x:(a.x+b.x)/2, y:(a.y+b.y)/2 });
+
+  function pointOnImage(x,y){
+    const cx = view.centreX + view.panX;
+    const cy = view.centreY + view.panY;
+    const halfW = view.baseW * view.zoom / 2;
+    const halfH = view.baseH * view.zoom / 2;
+    return x >= cx - halfW && x <= cx + halfW && y >= cy - halfH && y <= cy + halfH;
+  }
+
+  function beginPan(point){
+    pan = {
+      id:point.id, x:point.x, y:point.y,
+      panX:view.panX, panY:view.panY,
+      at:performance.now()
+    };
+  }
+
+  function beginPinch(){
+    const [a,b] = touchPair();
+    if(!a || !b) return;
+    const mid = midpoint(a,b);
+    pinch = {
+      distance:Math.max(1, distance(a,b)), zoom:view.zoom,
+      anchorX:(mid.x - view.centreX - view.panX) / view.zoom,
+      anchorY:(mid.y - view.centreY - view.panY) / view.zoom
+    };
+    pan = null;
+    gestureMoved = true;
+  }
+
+  function clearImageGesture(){
+    for(const id of touches.keys()){
+      if(canvas.hasPointerCapture(id)) canvas.releasePointerCapture(id);
+    }
+    touches.clear();
+    pinch = null; pan = null; gestureMoved = false; dragging = false;
+    lastTapAt = 0;
+  }
 
   canvas.addEventListener('pointerdown', (e) => {
+    if(isMobileViewer() && e.pointerType === 'touch'){
+      /* Start a viewing gesture on the artwork itself. The fullscreen canvas
+         also covers the captions and blank surround; accepting touches there
+         made an accidental pinch or pan feel as if the whole page were stuck. */
+      if(touches.size === 0 && !pointOnImage(e.clientX, e.clientY)) return;
+      const point = { id:e.pointerId, x:e.clientX, y:e.clientY };
+      touches.set(e.pointerId, point);
+      try{ canvas.setPointerCapture(e.pointerId); }catch(err){}
+      if(touches.size === 1){ beginPan(point); gestureMoved = false; }
+      else if(touches.size === 2) beginPinch();
+      e.preventDefault();
+      return;
+    }
     if(state.mode > 4.5 && state.mode < 5.5) return;   // plain lightbox: nothing to scrub
     dragging = true; sx = e.clientX; st = state.tTarget;
     canvas.setPointerCapture(e.pointerId);
   });
   canvas.addEventListener('pointermove', (e) => {
+    if(isMobileViewer() && e.pointerType === 'touch' && touches.has(e.pointerId)){
+      const point = { id:e.pointerId, x:e.clientX, y:e.clientY };
+      touches.set(e.pointerId, point);
+      if(touches.size >= 2 && pinch){
+        const [a,b] = touchPair();
+        const mid = midpoint(a,b);
+        const nextZoom = clamp(pinch.zoom * distance(a,b) / pinch.distance, 1, ZOOM_MAX);
+        view.zoom = nextZoom;
+        view.panX = mid.x - view.centreX - pinch.anchorX * nextZoom;
+        view.panY = mid.y - view.centreY - pinch.anchorY * nextZoom;
+        applyView();
+      }else if(touches.size === 1 && pan && pan.id === e.pointerId && view.zoom > 1.001){
+        const dx = e.clientX - pan.x, dy = e.clientY - pan.y;
+        if(Math.hypot(dx,dy) > 5) gestureMoved = true;
+        view.panX = pan.panX + dx;
+        view.panY = pan.panY + dy;
+        applyView();
+      }
+      e.preventDefault();
+      return;
+    }
     if(!dragging) return;
     setT(st + (e.clientX - sx) / (window.innerWidth * 0.62));
   });
   const endDrag = (e) => {
+    if(e && isMobileViewer() && e.pointerType === 'touch' && touches.has(e.pointerId)){
+      const point = touches.get(e.pointerId);
+      const wasSingle = touches.size === 1;
+      const wasTap = wasSingle && !gestureMoved && pan &&
+        performance.now() - pan.at < 320 &&
+        Math.hypot(point.x - pan.x, point.y - pan.y) < 10;
+      touches.delete(e.pointerId);
+      if(canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+
+      if(touches.size >= 2) beginPinch();
+      else if(touches.size === 1){
+        beginPan([...touches.values()][0]);
+        pinch = null; gestureMoved = true;
+      }else{
+        pinch = null; pan = null;
+        if(wasTap){
+          const now = performance.now();
+          if(now - lastTapAt < 340 && Math.hypot(point.x-lastTapX, point.y-lastTapY) < 30){
+            /* Double tap is deliberately a reset, not a second way to zoom.
+               Pinch owns magnification; the repeat gesture always gets home. */
+            resetView();
+            lastTapAt = 0;
+          }else{
+            lastTapAt = now; lastTapX = point.x; lastTapY = point.y;
+          }
+        }
+        gestureMoved = false;
+      }
+      return;
+    }
     dragging = false;
     if(e && e.pointerId != null && canvas.hasPointerCapture(e.pointerId))
       canvas.releasePointerCapture(e.pointerId);
@@ -322,6 +493,7 @@ function init(){
   ui.track.addEventListener('pointerup', endTrack);
   ui.track.addEventListener('pointercancel', endTrack);
   ui.stages.forEach((b,i) => b.addEventListener('click', () => setT(stageStops(state.mode)[i])));
+  ui.zoomReset.addEventListener('click', () => resetView());
   ui.close.addEventListener('click', () => close(false));
   ui.prev.addEventListener('click', () => show(state.idx - 1));
   ui.next.addEventListener('click', () => show(state.idx + 1));
@@ -329,6 +501,21 @@ function init(){
   document.addEventListener('keydown', (e) => {
     if(!state.open) return;
     if(e.key === 'Escape'){ close(false); return; }
+    if(e.key === 'Tab'){
+      /* aria-modal should behave like one: keep keyboard focus inside the
+         viewer instead of letting it disappear into the page underneath. */
+      const focusable = [...root.querySelectorAll('button:not([disabled])')]
+        .filter(el => el.getClientRects().length && getComputedStyle(el).visibility !== 'hidden');
+      if(focusable.length){
+        const first = focusable[0], last = focusable[focusable.length - 1];
+        if(e.shiftKey && (document.activeElement === first || !root.contains(document.activeElement))){
+          e.preventDefault(); last.focus();
+        }else if(!e.shiftKey && (document.activeElement === last || !root.contains(document.activeElement))){
+          e.preventDefault(); first.focus();
+        }
+      }
+      return;
+    }
     if(e.key === 'ArrowLeft'  && state.idx > 0){ show(state.idx - 1); return; }
     if(e.key === 'ArrowRight' && state.idx < state.list.length - 1){ show(state.idx + 1); return; }
     const n = parseInt(e.key, 10);
@@ -353,10 +540,12 @@ function init(){
 
   /* ---- open / close ---------------------------------------------------- */
   function open(list, idx, opts){
+    clearImageGesture();
     state.list = list; state.open = true;
     state.onShow = (opts && opts.onShow) || null;
     state.mode = (opts && typeof opts.mode === 'number') ? opts.mode : 2;
     mat.uniforms.uMode.value = state.mode;
+    resetView(false);
 
     /* mode 5 alone has nothing to scrub through — it is a plain lightbox.
        Anything above it is a real treatment and keeps its scrubber. */
@@ -382,6 +571,7 @@ function init(){
   /* fromPop: the history entry is already gone, so do not pop it again */
   function close(fromPop){
     if(!state.open) return;
+    clearImageGesture();
     loadSeq++;
     root.classList.remove('is-loading');
     root.removeAttribute('aria-busy');

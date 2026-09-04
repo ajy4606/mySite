@@ -812,7 +812,13 @@ html[data-lang="en"] .row .kr{visibility:hidden}
 .dlm-ui{position:absolute;inset:0;z-index:2;pointer-events:none;padding:var(--m);display:flex;flex-direction:column;justify-content:space-between}
 .dlm-ui > *{pointer-events:auto}
 .dlm-top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
+.dlm-actions{display:flex;align-items:flex-start;gap:10px;flex:none}
 .dlm-cap{font-family:var(--mono);font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-2);max-width:52ch;line-height:1.8}
+.dlm-zoom-reset{
+  display:none;width:44px;height:44px;align-items:center;justify-content:center;
+  border:1px solid var(--line);background:var(--ground-deep);color:var(--ink);
+  font-family:var(--mono);font-size:10px;letter-spacing:.12em;
+}
 .dlm-close{
   font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
   color:var(--ink-3);transition:color var(--t-fast) var(--ease);
@@ -852,6 +858,7 @@ html[data-lang="en"] .row .kr{visibility:hidden}
   font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-4);
 }
 .dlm-read .scale{color:var(--ink-3)}
+.dlm-mobile-instruction{display:none}
 .dlm-read .hint{color:var(--ink);font-variant-numeric:tabular-nums}
 
 /* a plain lightbox: nothing to scrub, so the scrubber goes away */
@@ -1087,14 +1094,17 @@ html[data-lang="en"] .row .kr{visibility:hidden}
   .strata:focus-visible{outline:none}
 }
 @media (max-width:699px){
+  .dlm-desktop-instruction{display:none}
+  .dlm-mobile-instruction{display:inline}
+  .dlm.is-zoomed .dlm-zoom-reset{display:flex}
   /* The source stage is a real browser image, not a reduced-resolution WebGL
      redraw. It stays pixel-sharp on retina phones; moving the scrubber swaps
      back to the canvas for the series treatment. */
   .dlm.source-view .dlm-source{
     display:block;position:absolute;z-index:1;
-    left:20px;right:20px;top:74px;bottom:168px;
-    width:calc(100% - 40px);height:calc(100% - 242px);
-    object-fit:contain;pointer-events:none;
+    left:0;top:0;max-width:none;
+    object-fit:fill;pointer-events:none;
+    transform-origin:50% 50%;will-change:transform;
   }
   .dlm.is-loading .dlm-source{opacity:0}
 }
