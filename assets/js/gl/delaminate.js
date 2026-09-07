@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    delaminate.js — full-screen decomposition viewer
    ------------------------------------------------------------
    Opening a plate assembles it: the image arrives decomposed and
@@ -9,7 +9,7 @@
    ============================================================ */
 
 import * as THREE from '../../vendor/three.module.min.js';
-import { VERT, FRAG_DELAM } from './shaders.js?v=20260812-4';
+import { VERT, FRAG_DELAM } from './shaders.js?v=20260907';
 
 const lerp  = (a,b,t) => a + (b-a)*t;
 const clamp = (v,a,b) => Math.min(b, Math.max(a, v));
@@ -183,7 +183,7 @@ function init(){
   }
 
   function syncSourceView(){
-    const intact = window.innerWidth < 700 && state.tTarget <= 0.001;
+    const intact = state.tTarget <= 0.001 && (isMobileViewer() || state.t < 0.001);
     root.classList.toggle('source-view', state.open && intact && source.hasAttribute('src'));
   }
 
@@ -225,7 +225,7 @@ function init(){
     view.availW = availW; view.availH = availH;
     view.centreX = W / 2;
     view.centreY = H / 2 - view.baseY;
-    if(W < 700){
+    {
       /* Size the sharp DOM source to the exact WebGL plate bounds. An
          object-fit box looked aligned only for some aspect ratios and jumped
          when the scrubber swapped Source for the treated canvas. */
@@ -242,8 +242,10 @@ function init(){
 
   /* ---- loading --------------------------------------------------------- */
   function show(i){
+    clearImageGesture();
     const nextIdx = clamp(i, 0, state.list.length - 1);
     const item = state.list[nextIdx];
+    const imageSrc = item.full || item.src;
     const ticket = ++loadSeq;
 
     /* Keep the current plate and its metadata paired until the next texture
@@ -254,11 +256,11 @@ function init(){
     ui.next.disabled = true;
     ui.hint.textContent = `${String(nextIdx+1).padStart(2,'0')} / ${String(state.list.length).padStart(2,'0')}  ·  LOADING`;
 
-    const apply = (tex) => {
+    const apply = (tex, url) => {
       if(!state.open || ticket !== loadSeq) return;
       state.idx = nextIdx;
       mat.uniforms.uTex.value = tex;
-      mat.uniforms.uSeed.value = seedFor(item.src || String(nextIdx));
+      mat.uniforms.uSeed.value = seedFor((item.src || String(nextIdx)).split('?')[0]);
       state.aspect = tex.image.width / tex.image.height;
       resetView(false);
       resize();
@@ -269,7 +271,7 @@ function init(){
       state.tTarget = 0;
       mat.uniforms.uT.value = state.t;
       mat.uniforms.uFade.value = 0;
-      source.src = item.src;
+      source.src = url;
       ui.cap.textContent = item.caption || '';
       ui.prev.disabled = state.idx === 0;
       ui.next.disabled = state.idx === state.list.length - 1;
@@ -289,17 +291,33 @@ function init(){
       ui.hint.textContent = 'IMAGE COULD NOT BE LOADED';
     };
 
-    if(cache.has(item.src)) apply(cache.get(item.src));
-    else{
-      loader.load(item.src, (tex) => {
+    function load(url){
+      if(cache.has(url)){
+        const tex = cache.get(url);
+        cache.delete(url); cache.set(url, tex);
+        apply(tex, url);
+        return;
+      }
+      loader.load(url, (tex) => {
+        if(!state.open || ticket !== loadSeq){ tex.dispose(); return; }
         tex.colorSpace = THREE.SRGBColorSpace;
         tex.minFilter  = THREE.LinearMipmapLinearFilter;
         tex.magFilter  = THREE.LinearFilter;
         tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
-        cache.set(item.src, tex);
-        apply(tex);
-      }, undefined, fail);
+        cache.set(url, tex);
+        apply(tex, url);
+        // Large textures must not accumulate for an entire exhibition visit.
+        while(cache.size > 2){
+          const oldest = cache.keys().next().value;
+          cache.get(oldest).dispose(); cache.delete(oldest);
+        }
+      }, undefined, () => {
+        if(!state.open || ticket !== loadSeq) return;
+        if(url !== item.src) load(item.src);
+        else fail();
+      });
     }
+    load(imageSrc);
   }
 
   /* ---- hud ------------------------------------------------------------- */
@@ -530,6 +548,7 @@ function init(){
     const dt = Math.min(clock.getDelta(), 0.05);
     const response = state.mode > 4.5 && state.mode < 5.5 ? 0.0006 : 0.00008;
     state.t = lerp(state.t, state.tTarget, 1 - Math.pow(response, dt));
+    syncSourceView();
     mat.uniforms.uT.value    = state.t;
     mat.uniforms.uTime.value = clock.elapsedTime;
     if(mat.uniforms.uTex.value)

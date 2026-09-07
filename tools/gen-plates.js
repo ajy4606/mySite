@@ -25,6 +25,10 @@ const TODO_WORK = '<span class="todo">매체 · 크기 입력</span>';
 
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const dim = s => s.replace(/(\d+)\s*[xX×]\s*(\d+)\s*cm/, '$1 × $2 cm');
+const fullAttr = item => item.full ? ` data-full="${esc(item.full)}"` : '';
+const responsive = item => item.full && item.fullW > item.w
+  ? ` srcset="${esc(item.file)} ${item.w}w, ${esc(item.full)} ${item.fullW}w" sizes="auto, (max-width:699px) calc(100vw - 36px), 90vw"`
+  : '';
 
 /* 파일 이름이 곧 캡션입니다. 형식은 네 시리즈 모두 같습니다:
 
@@ -60,8 +64,8 @@ function plate(item, cls, label, num){
   const classes = [cls, featured].filter(Boolean).join(' ');
   /* --ar sits on the figure too: the Installation grid sizes its rows from it */
   return `        <figure class="plate${classes ? ' ' + classes : ''} rv" style="--ar:${ar}">
-          <div class="strata" style="--ar:${ar}" data-src="${item.file}" data-orig="${esc(item.orig)}">
-            <img src="${item.file}" alt="${esc(alt)}" loading="lazy" width="${item.w}" height="${item.h}">
+          <div class="strata" style="--ar:${ar}" data-src="${item.file}"${fullAttr(item)} data-orig="${esc(item.orig)}">
+            <img src="${item.file}"${responsive(item)} alt="${esc(alt)}" loading="lazy" width="${item.w}" height="${item.h}">
           </div>
           <span class="tag">⌖ Delaminate</span>
           <figcaption><span>${caption(item.orig)}</span><span class="no">${label} ${n}</span></figcaption>
@@ -74,8 +78,8 @@ function installationPlate(item, num){
   const ar = (item.w / item.h).toFixed(4);
   const alt = `installation ${num}`;
   return `        <figure class="plate rv" style="--ar:${ar}">
-          <div class="strata" style="--ar:${ar}" data-src="${item.file}" data-orig="${esc(item.orig)}">
-            <img src="${item.file}" alt="${esc(alt)}" loading="lazy" width="${item.w}" height="${item.h}">
+          <div class="strata" style="--ar:${ar}" data-src="${item.file}"${fullAttr(item)} data-orig="${esc(item.orig)}">
+            <img src="${item.file}"${responsive(item)} alt="${esc(alt)}" loading="lazy" width="${item.w}" height="${item.h}">
           </div>
         </figure>`;
 }
@@ -271,5 +275,22 @@ for(const [slug, items] of Object.entries(byProject)){
   console.log(`${slug}: ${items.length} plates`);
 }
 
+/* Covers, preloads, and thumbnails must leave the old 30-day image cache too.
+   Content hashes change only when the exported bytes change. */
+const assetVersions = new Map();
+for(const item of manifest){
+  for(const url of [item.file, item.thumb, item.full]){
+    if(url) assetVersions.set(url.split('?')[0], url);
+  }
+}
+function refreshAssetVersions(text){
+  return text.replace(/assets\/works\/[a-z-]+\/\d+(?:-sm|-full)?\.jpg(?:\?v=[a-zA-Z0-9-]+)?/g,
+    url => assetVersions.get(url.split('?')[0]) || url);
+}
+html = refreshAssetVersions(html);
+const mainPath = path.join(SITE, 'assets/js/main.js');
+const main = fs.readFileSync(mainPath, 'utf8');
+const refreshedMain = refreshAssetVersions(main);
+if(main !== refreshedMain) fs.writeFileSync(mainPath, refreshedMain, 'utf8');
 fs.writeFileSync(path.join(SITE, 'index.html'), html, 'utf8');
 console.log('containers filled: ' + filled);

@@ -1,6 +1,7 @@
 ﻿param(
   [string[]]$Only = @('midore','full-metal-plant','hwanggok-colorized','hwanggok'),
-  [switch]$Help
+  [switch]$Help,
+  [string]$Python
 )
 
 # ============================================================
@@ -18,8 +19,8 @@
 #  powershell -File tools/build-images.ps1 -Help
 #     → 사용법과 폴더 이름 안내
 #
-#  대상 폴더는 통째로 지우고 다시 만듭니다. assets/works/ 안의 파일을
-#  직접 고치지 마세요 — 전부 여기서 생성된 것입니다.
+#  색상 프로필을 sRGB로 변환하고 도판/썸네일/확대본을 만듭니다.
+#  원본은 수정하지 않으며 기존 웹용 파일도 먼저 지우지 않습니다.
 #
 #  이 스크립트만 돌리면 사진 파일만 바뀝니다. 페이지에 반영하려면 이어서
 #  node tools/gen-plates.js 까지 돌려야 합니다 (deploy.ps1이 둘 다 합니다).
@@ -47,7 +48,20 @@ if ($Help) {
   exit 0
 }
 
-Add-Type -AssemblyName System.Drawing
+$ErrorActionPreference = 'Stop'
+# Prefer an explicit interpreter, then the installed desktop runtime or Python.
+# No user-specific absolute path is stored in this repository.
+if (-not $Python) {
+  $bundled = Join-Path ([Environment]::GetFolderPath('UserProfile')) '.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe'
+  if (Test-Path -LiteralPath $bundled) { $Python = $bundled }
+  else {
+    $command = Get-Command python -ErrorAction SilentlyContinue
+    if ($command) { $Python = $command.Source }
+  }
+}
+if (-not $Python) { throw 'Python is required. Install Python and run: python -m pip install -r tools/requirements-images.txt' }
+& $Python -c 'from PIL import ImageCms; assert ImageCms.core.littlecms_version'
+if ($LASTEXITCODE -ne 0) { throw 'Install Pillow: python -m pip install -r tools/requirements-images.txt' }
 
 # 폴더를 옮기거나 이름을 바꿔도 따라오도록 스크립트 위치에서 거슬러 올라갑니다.
 $site = Split-Path -Parent $PSScriptRoot
@@ -62,8 +76,6 @@ if (-not (Test-Path $src)) {
   exit 1
 }
 if (-not (Test-Path $dst)) { New-Item -ItemType Directory -Force -Path $dst | Out-Null }
-
-$jpeg = [System.Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() | Where-Object { $_.MimeType -eq 'image/jpeg' }
 
 # 폴더 이름 → 슬러그. 작가님이 폴더 이름을 바꾸면 여기도 고쳐야 합니다.
 $slugs = [ordered]@{
@@ -84,42 +96,6 @@ if ($bad.Count -gt 0) {
   Write-Host ("  쓸 수 있는 이름: " + ($known -join ', ') + ", all") -ForegroundColor Yellow
   Write-Host ""
   exit 1
-}
-
-function Save-Resized($img, $dstPath, $maxDim, $quality) {
-  $scale = [Math]::Min(1.0, $maxDim / [Math]::Max($img.Width, $img.Height))
-  $nw = [int][Math]::Round($img.Width * $scale)
-  $nh = [int][Math]::Round($img.Height * $scale)
-  $bmp = New-Object System.Drawing.Bitmap($nw, $nh)
-  $g = [System.Drawing.Graphics]::FromImage($bmp)
-  $g.Clear([System.Drawing.Color]::Black)          # flatten any alpha onto the site ground
-  $g.InterpolationMode  = 'HighQualityBicubic'
-  $g.SmoothingMode      = 'HighQuality'
-  $g.PixelOffsetMode    = 'HighQuality'
-  $g.CompositingQuality = 'HighQuality'
-  $g.DrawImage($img, 0, 0, $nw, $nh)
-  $g.Dispose()
-  $ep = New-Object System.Drawing.Imaging.EncoderParameters(1)
-  $ep.Param[0] = New-Object System.Drawing.Imaging.EncoderParameter([System.Drawing.Imaging.Encoder]::Quality, [long]$quality)
-  $bmp.Save($dstPath, $jpeg, $ep)
-  $bmp.Dispose()
-  return @{ w = $nw; h = $nh }
-}
-
-# System.Drawing exposes raw pixels and does not apply the camera's EXIF
-# rotation automatically. Normalize it before creating the web copies.
-function Apply-ExifOrientation($img) {
-  try {
-    if ($img.PropertyIdList -notcontains 274) { return }
-    $orientation = [BitConverter]::ToUInt16($img.GetPropertyItem(274).Value, 0)
-    switch ($orientation) {
-      3 { $img.RotateFlip([System.Drawing.RotateFlipType]::Rotate180FlipNone) }
-      6 { $img.RotateFlip([System.Drawing.RotateFlipType]::Rotate90FlipNone) }
-      8 { $img.RotateFlip([System.Drawing.RotateFlipType]::Rotate270FlipNone) }
-    }
-  } catch {
-    # Bad or missing metadata must not stop the remaining image build.
-  }
 }
 
 # 자리 바꾸기 — 작품 번호순이 아닌 자리에 두고 싶을 때만 씁니다.
@@ -149,7 +125,9 @@ $kept = @()
 if (Test-Path $manifestPath) {
   # PS 5.1\uC758 ConvertFrom-Json\uC740 \uBC30\uC5F4\uC744 \uD3BC\uCE58\uC9C0 \uC54A\uACE0 \uD1B5\uC9F8\uB85C \uB0B4\uBCF4\uB0C5\uB2C8\uB2E4.
   # \uBC18\uB4DC\uC2DC \uBCC0\uC218\uC5D0 \uBA3C\uC800 \uBC1B\uC740 \uB4A4\uC5D0 \uAC78\uB7EC\uC57C \uD569\uB2C8\uB2E4 (\uD30C\uC774\uD504\uC5D0 \uBC14\uB85C \uBB3C\uB9AC\uBA74 \uC804\uBD80 \uD1B5\uACFC).
-  $prev = Get-Content $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+  $manifestText = Get-Content $manifestPath -Raw -Encoding UTF8
+  if ($manifestText.StartsWith('[\n')) { $manifestText = $manifestText.Replace('\n', "`n") }
+  $prev = $manifestText | ConvertFrom-Json
   $kept = @($prev | Where-Object { $Only -notcontains $_.project })
 }
 
@@ -165,7 +143,6 @@ foreach ($folder in $slugs.Keys) {
   }
 
   $outDir = Join-Path $dst $slug
-  if (Test-Path $outDir) { Remove-Item (Join-Path $outDir '*') -Force }
   New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 
   $seriesTitle = switch ($slug) {
@@ -195,26 +172,24 @@ foreach ($folder in $slugs.Keys) {
     $i++
     $nn = '{0:d2}' -f $i
 
-    # 사진 한 장이 깨져 있어도 나머지는 계속 만들도록 감쌉니다.
-    try   {
-      $img = [System.Drawing.Image]::FromFile($f.FullName)
-      Apply-ExifOrientation $img
+    $result = & $Python (Join-Path $PSScriptRoot 'convert-image.py') --source $f.FullName --output $outDir --number $nn
+    if ($LASTEXITCODE -ne 0) {
+      throw "Image conversion failed: $($f.Name). The manifest and page were not replaced."
     }
-    catch {
-      Write-Host "  !! 못 읽는 파일이라 건너뜁니다: $($f.Name)" -ForegroundColor Yellow
-      $i--
-      continue
-    }
-    try {
-      $big = Save-Resized $img (Join-Path $outDir "$nn.jpg")     1600 84
-      $sm  = Save-Resized $img (Join-Path $outDir "$nn-sm.jpg")   800 80
-    } finally { $img.Dispose() }
+    $variants = $result | ConvertFrom-Json
+    $big = $variants.display
+    $sm = $variants.'-sm'
+    $full = $variants.'-full'
 
     $fresh += [pscustomobject]@{
       project = $slug
       n       = $nn
-      file    = "assets/works/$slug/$nn.jpg"
-      thumb   = "assets/works/$slug/$nn-sm.jpg"
+      file    = "assets/works/$slug/$nn.jpg?v=$($big.version)"
+      thumb   = "assets/works/$slug/$nn-sm.jpg?v=$($sm.version)"
+      full    = "assets/works/$slug/$nn-full.jpg?v=$($full.version)"
+      fullW   = $full.w
+      fullH   = $full.h
+      colorSpace = 'sRGB'
       orig    = $f.Name
       w       = $big.w
       h       = $big.h
@@ -227,7 +202,7 @@ $all = @($fresh) + @($kept)
 # Windows PowerShell aligns JSON property values with spaces. Strip only the
 # line-end padding so generated manifests stay clean in Git diffs.
 $json = ($all | ConvertTo-Json -Depth 4) -replace '(?m)[ \t]+(?=\r?$)', ''
-$json = ($json -replace "\r\n", "\n").TrimEnd() + "\n"
+$json = ($json -replace "`r`n", "`n").TrimEnd() + "`n"
 [System.IO.File]::WriteAllText($manifestPath, $json, (New-Object System.Text.UTF8Encoding($false)))
 ""
 "  rebuilt: " + $fresh.Count + "   kept untouched: " + $kept.Count

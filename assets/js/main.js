@@ -1,11 +1,11 @@
-﻿/* ============================================================
+/* ============================================================
    main.js — routing, motion, and the plate interactions
    ============================================================ */
 
 /* Bump this query whenever stack.js changes — assets are served with a
    one-hour cache and browsers will otherwise keep the old module. */
-import { createStack }  from './gl/stack.js?v=20260820-1';
-import { viewer }       from './gl/delaminate.js?v=20260904-2';
+import { createStack }  from './gl/stack.js?v=20260907';
+import { viewer }       from './gl/delaminate.js?v=20260907';
 
 const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -36,10 +36,10 @@ const MODE_NONE = 5;
    so the five captions did not read as one list. Years live on the project
    page, the award lives there and in the CV. */
 const WORKS = [
-  { title:'Midore',             kr:'미도래',          meta:'Photograph · 3D render · Generative model', mode:8, src:'assets/works/midore/13.jpg',             href:'#/midore' },              // Midore #14
-  { title:'Full Metal Plant',   kr:'풀 메탈 플랜트',   meta:'Generative model · 3D render',              mode:3, src:'assets/works/full-metal-plant/01.jpg',   href:'#/full-metal-plant' },    // Full Metal Plant #1
-  { title:'Hwanggok_Colorized', kr:'황곡_컬러라이즈드', meta:'Generative colorization',                   mode:1, src:'assets/works/hwanggok-colorized/05.jpg', href:'#/hwanggok-colorized' },  // Hwanggok_Colorized #11
-  { title:'Hwanggok',           kr:'황곡',            meta:'Program-generated · Cut & assembly',        mode:7, src:'assets/works/hwanggok/03.jpg',           href:'#/hwanggok' },            // Hwanggok #7
+  { title:'Midore',             kr:'미도래',          meta:'Photograph · 3D render · Generative model', mode:8, src:'assets/works/midore/13.jpg?v=072b6cc01d4d',             href:'#/midore' },              // Midore #14
+  { title:'Full Metal Plant',   kr:'풀 메탈 플랜트',   meta:'Generative model · 3D render',              mode:3, src:'assets/works/full-metal-plant/01.jpg?v=ec2a35391f12',   href:'#/full-metal-plant' },    // Full Metal Plant #1
+  { title:'Hwanggok_Colorized', kr:'황곡_컬러라이즈드', meta:'Generative colorization',                   mode:1, src:'assets/works/hwanggok-colorized/05.jpg?v=e3e0a257c98a', href:'#/hwanggok-colorized' },  // Hwanggok_Colorized #11
+  { title:'Hwanggok',           kr:'황곡',            meta:'Program-generated · Cut & assembly',        mode:7, src:'assets/works/hwanggok/03.jpg?v=fec1ee68a895',           href:'#/hwanggok' },            // Hwanggok #7
   { title:'Installation',       kr:'전시 전경',        meta:'Exhibition views',                          mode:5, src:'assets/works/installation/26.jpg',       href:'#/installation' }         // Installation Fig. 17
 ];
 
@@ -348,6 +348,7 @@ function openViewer(el){
     const fc = s.closest('figure')?.querySelector('figcaption');
     return {
       src: s.dataset.src,
+      full: s.dataset.full || s.dataset.src,
       caption: visibleText(fc?.querySelector('span:not(.no)'))
                || visibleText(fc?.querySelector('span.no'))
     };

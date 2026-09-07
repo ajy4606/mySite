@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    stack.js — the index hero
    ------------------------------------------------------------
    The works are held in space as a stack of physical sheets.
@@ -8,7 +8,7 @@
    ============================================================ */
 
 import * as THREE from '../../vendor/three.module.min.js';
-import { VERT, FRAG_PLATE } from './shaders.js?v=20260812-4';
+import { VERT, FRAG_PLATE } from './shaders.js?v=20260907';
 
 const lerp = (a, b, t) => a + (b - a) * t;
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
@@ -99,7 +99,7 @@ export function createStack(opts){
         uMode:    { value: item.mode ?? 2 },
         /* per-sheet, stable across reloads — see seedFor in delaminate.js for
            why this hashes the path rather than using the index */
-        uSeed:    { value: seedFor(item.src || String(i)) }
+        uSeed:    { value: seedFor((item.src || String(i)).split('?')[0]) }
       }
     });
     const mesh = new THREE.Mesh(geo, mat);
