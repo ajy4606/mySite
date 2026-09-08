@@ -440,6 +440,9 @@ html[data-lang="en"] .row .kr{visibility:hidden}
 }
 .p-head .n{font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;color:var(--ink-3);display:block;margin-bottom:clamp(18px,2.4vw,34px)}
 .p-head h1{margin-bottom:14px}
+/* Route changes move screen-reader focus to the new page heading. The heading
+   is not an interactive control, so do not draw a button-like rectangle. */
+h1[tabindex="-1"]:focus{outline:none}
 .p-head .kr-sub{margin-bottom:22px}
 .p-head .meta{
   display:flex;gap:clamp(18px,2.6vw,42px);flex-wrap:wrap;
@@ -1126,7 +1129,7 @@ html[data-lang="en"] .row .kr{visibility:hidden}
 
 /* ---------- 20. reduced motion ------------------------------------------ */
 .project-summary{
-  max-width:72ch;margin:28px 0 0;color:var(--ink-2);font-size:15px;line-height:1.85;
+  max-width:88ch;margin:28px 0 0;color:var(--ink-2);font-size:15px;line-height:1.85;
   text-wrap:pretty;
 }
 .context-links{display:flex;flex-wrap:wrap;gap:4px 24px;margin-top:12px;font-size:12px;letter-spacing:.015em}
