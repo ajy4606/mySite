@@ -1,9 +1,19 @@
 [build]
+  command = "node tools/build-pages.js"
   publish = "."
 
-# The site is a single document with hash routing, so the HTML must never be
-# served stale. Assets have unhashed filenames, so they get short-to-moderate
-# lifetimes rather than immutable ones.
+# Static project documents provide route-specific metadata. The client router
+# preserves in-page transitions and accepts the previously shared hash links.
+
+[[redirects]]
+  from = "/bio"
+  to = "/info/"
+  status = 301
+
+[[redirects]]
+  from = "/contact"
+  to = "/info/"
+  status = 301
 
 [[headers]]
   for = "/index.html"

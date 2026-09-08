@@ -73,7 +73,11 @@ Step 3 'Refreshing browser cache versions'
 & (Join-Path $PSScriptRoot 'bump.ps1')
 Stop-OnFailure 'cache version refresh'
 
-Step 4 'Creating a Git commit'
+Step 4 'Building static project pages and share metadata'
+& node (Join-Path $PSScriptRoot 'build-pages.js')
+Stop-OnFailure 'static page generation'
+
+Step 5 'Creating a Git commit'
 if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
   throw 'Git was not found. Install Git and run this script again.'
 }

@@ -3,6 +3,18 @@
 이 문서는 "무엇을 어디서 어떻게" 만 다룹니다.
 왜 그렇게 만들었는지(디자인 의도, 기술 배경)는 [NOTES.md](NOTES.md) 에 있습니다.
 
+## 프로젝트 주소와 생성 페이지 (2026-09)
+
+`index.html`이 모든 페이지의 편집 원본입니다. `midore/index.html` 등 프로젝트
+폴더의 HTML은 생성 결과이므로 직접 고치지 마세요. 텍스트·배치 수정 후
+`node tools/build-pages.js`를 실행하면 독립 주소와 공유 정보에 반영됩니다.
+페이지별 제목·공유 설명은 `assets/js/pages.mjs`에서 관리합니다.
+기존 `#/midore` 주소는 `/midore/`로 호환되며, 목록에서 상세를 연 뒤 뒤로가면
+방문 당시 스크롤 위치가 복원됩니다. 네 프로젝트의 도판 순서는 기존
+`gen-plates.js` 설정을 그대로 따릅니다.
+
+이메일과 Instagram은 작가 요청으로 클릭 링크 없이 일반 텍스트로 유지합니다.
+
 ---
 
 ## 0. 준비 — 딱 두 가지
@@ -27,6 +39,7 @@
 VS Code 에서 `Terminal > New Terminal` 을 열고:
 
 ```bash
+node tools/build-pages.js
 node tools/serve.js
 ```
 

@@ -20,6 +20,7 @@ const TYPES = {
   '.html':'text/html; charset=utf-8',
   '.css' :'text/css; charset=utf-8',
   '.js'  :'text/javascript; charset=utf-8',
+  '.mjs' :'text/javascript; charset=utf-8',
   '.json':'application/json; charset=utf-8',
   '.jpg' :'image/jpeg',  '.jpeg':'image/jpeg',
   '.png' :'image/png',   '.webp':'image/webp',
@@ -32,14 +33,24 @@ const TYPES = {
 
 http.createServer((req, res) => {
   // 쿼리(?v=…)는 떼고, 한글 파일명을 위해 디코딩
-  let rel = decodeURIComponent(req.url.split('?')[0]);
+  let rel;
+  try { rel = decodeURIComponent(req.url.split('?')[0]); }
+  catch { res.writeHead(400); return res.end('invalid URL'); }
   if (rel === '/' || rel === '') rel = '/index.html';
 
-  const file = path.join(ROOT, rel);
+  let file = path.resolve(ROOT, '.' + rel);
 
   // 프로젝트 폴더 밖으로 나가는 요청은 거부
-  if (!file.startsWith(ROOT)) {
+  if (file !== ROOT && !file.startsWith(ROOT + path.sep)) {
     res.writeHead(403); return res.end('forbidden');
+  }
+
+  if(fs.existsSync(file) && fs.statSync(file).isDirectory()){
+    if(!rel.endsWith('/')){
+      res.writeHead(301, { Location:rel + '/' + (req.url.includes('?') ? '?' + req.url.split('?')[1] : '') });
+      return res.end();
+    }
+    file = path.join(file, 'index.html');
   }
 
   fs.readFile(file, (err, buf) => {

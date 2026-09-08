@@ -4,8 +4,9 @@
 
 /* Bump this query whenever stack.js changes — assets are served with a
    one-hour cache and browsers will otherwise keep the old module. */
-import { createStack }  from './gl/stack.js?v=20260907';
-import { viewer }       from './gl/delaminate.js?v=20260907';
+import { createStack }  from './gl/stack.js?v=20260908';
+import { viewer }       from './gl/delaminate.js?v=20260908';
+import { PAGES, canonicalPath, resolvePage } from './pages.mjs?v=20260908';
 
 const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -125,51 +126,125 @@ const NAV_FOR = {
 
 let currentView = null;
 let stack = null;
+let routeTimer = 0, routing = false, homeScroll = 0;
+let closeMenu = () => {};
 
 function parseHash(){
-  const raw = location.hash.replace(/^#/, '');
-  const cut = raw.indexOf('?');
-  const p = cut === -1 ? raw : raw.slice(0, cut);
-  const q = cut === -1 ? ''  : raw.slice(cut + 1);
-  return { path: ROUTES[p] ? p : '/', params: new URLSearchParams(q) };
+  const route = resolvePage(new URL(location.href)) || { path:'/', search:'', anchor:'' };
+  return { ...route, params:new URLSearchParams(route.search) };
 }
 
-function render(instant){
-  const { path, params } = parseHash();
-  const id = ROUTES[path];
+function rememberScroll(){
+  if(routing || !currentView || document.body.classList.contains('is-locked')) return;
+  if(currentView === 'v-home') homeScroll = window.scrollY;
+  history.replaceState({ ...history.state, scrollY:window.scrollY }, '', location.href);
+}
 
-  // A detail-page thread link can cue related works without changing view.
+function updatePageMeta(path){
+  const page = PAGES[path];
+  if(!page) return;
+  document.title = page.title;
+  const url = 'https://ahnjaeyoung.com' + canonicalPath(path);
+  $('link[rel="canonical"]').href = url;
+  $('meta[property="og:url"]').content = url;
+  $('meta[property="og:title"]').content = page.title;
+  $('meta[name="description"]').content = page.description;
+  $('meta[property="og:description"]').content = page.description;
+  const image = $(`#idx-list [data-work="v-${page.work}"]`)?.dataset.peek;
+  if(image) $('meta[property="og:image"]').content = new URL(image, 'https://ahnjaeyoung.com/').href;
+}
+
+function render(instant, options = {}){
+  clearTimeout(routeTimer);
+  const { path, params, anchor } = parseHash();
+  const id = ROUTES[path];
+  const returningHome = id === 'v-home' && currentView && currentView !== id;
+  const position = () => {
+    if(options.restore != null){
+      window.scrollTo({ top:options.restore, behavior:'instant' });
+    }else if(anchor){
+      const target = document.getElementById(anchor);
+      if(returningHome && anchor === 'works' && homeScroll > 0) window.scrollTo({ top:homeScroll, behavior:'instant' });
+      else target?.scrollIntoView({ behavior:instant ? 'instant' : 'smooth', block:'start' });
+    }else window.scrollTo({ top:0, behavior:'instant' });
+    if(params.has('t')) applyThreadFocus(params.get('t'));
+  };
+
   if(id === currentView){
-    if(id === 'v-home') applyThreadFocus(params.get('t'));
+    routing = false;
+    document.body.classList.remove('is-leaving');
+    if(options.position) position();
     return;
   }
 
+  routing = true;
   const swap = () => {
     $$('.view').forEach(v => v.classList.remove('active'));
     const el = document.getElementById(id);
     if(el) el.classList.add('active');
     currentView = id;
 
-    document.title = (el && el.dataset.title) ? el.dataset.title : 'Ahn Jaeyoung';
+    updatePageMeta(path);
     const navHash = NAV_FOR[id] || '#/';
-    $$('.nav a, .mmenu a').forEach(a => a.classList.toggle('on', a.getAttribute('href') === navHash));
+    $$('.nav a, .mmenu a').forEach(a => a.classList.toggle('on', resolvePage(new URL(a.href))?.path === navHash.slice(1)));
 
     document.body.classList.remove('is-leaving');
-    window.scrollTo(0, 0);
 
-    if(id === 'v-home'){ stack && stack.resume(); applyThreadFocus(params.get('t')); }
+    if(id === 'v-home'){ stack && stack.resume(); if(!params.has('t')) clearThreadFocus(); }
     else                 stack && stack.pause();
 
     bindView(el);
-    requestAnimationFrame(() => { measure(); paintStrata(); });
+    requestAnimationFrame(() => {
+      measure(); paintStrata(); position(); routing = false;
+      if(!instant){
+        const heading = $('h1', el);
+        if(heading){ heading.tabIndex = -1; heading.focus({ preventScroll:true }); }
+      }
+    });
   };
 
   if(instant || REDUCED){ swap(); return; }
   document.body.classList.add('is-leaving');
-  setTimeout(swap, 190);
+  routeTimer = setTimeout(swap, 190);
 }
 
-window.addEventListener('hashchange', () => render(false));
+function normalizeLegacyURL(){
+  if(!location.hash.startsWith('#/')) return;
+  const route = parseHash();
+  history.replaceState(history.state, '', canonicalPath(route.path) + route.search);
+}
+
+function initNavigation(){
+  history.scrollRestoration = 'manual';
+  normalizeLegacyURL();
+  let navigationURL = location.href;
+  document.addEventListener('click', e => {
+    const a = e.target.closest('a[href]');
+    if(!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || a.target || a.hasAttribute('download')) return;
+    const url = new URL(a.href);
+    if(url.origin !== location.origin) return;
+    const route = resolvePage(url);
+    if(!route) return;
+    e.preventDefault();
+    rememberScroll(); closeMenu(false);
+    const href = canonicalPath(route.path) + route.search + (route.anchor ? '#' + route.anchor : '');
+    if(href !== location.pathname + location.search + location.hash) history.pushState({ scrollY:0 }, '', href);
+    navigationURL = location.href;
+    render(false, { position:true });
+  });
+  window.addEventListener('popstate', e => {
+    closeMenu(false);
+    normalizeLegacyURL();
+    // A viewer entry has the same route. Its own Back handler closes it;
+    // do not move the document behind the lightbox.
+    const changed = navigationURL !== location.href;
+    navigationURL = location.href;
+    if(changed || ROUTES[parseHash().path] !== currentView) render(false, { restore:e.state?.scrollY ?? 0, position:true });
+  });
+  window.addEventListener('hashchange', () => {
+    if(location.hash.startsWith('#/')){ normalizeLegacyURL(); navigationURL = location.href; render(false, { position:true }); }
+  });
+}
 
 /* ============================================================
    3. reveal on scroll
@@ -418,7 +493,7 @@ function applyThreadFocus(t){
 
   /* A thread is a moment of orientation, not a persistent filter state. */
   threadFocusTimer = setTimeout(clearThreadFocus, 3200);
-  try{ history.replaceState(history.state, '', '#/'); }catch(e){}
+  try{ history.replaceState(history.state, '', '/#works'); }catch(e){}
 }
 
 /* ============================================================
@@ -473,19 +548,34 @@ function initIndex(){
    ============================================================ */
 function initChrome(){
   const burger = $('#burger'), mmenu = $('#mmenu'), prog = $('#prog');
-
-  burger.addEventListener('click', () => {
-    const open = mmenu.classList.toggle('open');
-    burger.textContent = open ? 'Close' : 'Menu';
-    burger.setAttribute('aria-expanded', String(open));
-    document.body.classList.toggle('is-locked', open);
-  });
-  $$('.mmenu a').forEach(a => a.addEventListener('click', () => {
+  closeMenu = (restore = true) => {
+    if(!mmenu.classList.contains('open')) return;
     mmenu.classList.remove('open');
     burger.textContent = 'Menu';
     burger.setAttribute('aria-expanded', 'false');
     document.body.classList.remove('is-locked');
-  }));
+    $('main').inert = false; $('footer').inert = false;
+    if(restore) burger.focus({ preventScroll:true });
+  };
+  burger.addEventListener('click', () => {
+    if(mmenu.classList.contains('open')){ closeMenu(); return; }
+    rememberScroll();
+    mmenu.classList.add('open');
+    burger.textContent = 'Close'; burger.setAttribute('aria-expanded', 'true');
+    document.body.classList.add('is-locked');
+    $('main').inert = true; $('footer').inert = true;
+    $('a', mmenu).focus({ preventScroll:true });
+  });
+  document.addEventListener('keydown', e => {
+    if(!mmenu.classList.contains('open')) return;
+    if(e.key === 'Escape'){ e.preventDefault(); closeMenu(); return; }
+    if(e.key !== 'Tab') return;
+    const focusable = [burger, ...$$('a, button', mmenu)];
+    const first = focusable[0], last = focusable.at(-1);
+    if(e.shiftKey && (document.activeElement === first || !focusable.includes(document.activeElement))){ e.preventDefault(); last.focus(); }
+    else if(!e.shiftKey && (document.activeElement === last || !focusable.includes(document.activeElement))){ e.preventDefault(); first.focus(); }
+  });
+  window.addEventListener('resize', () => { if(innerWidth > 820) closeMenu(); }, { passive:true });
 
   let ticking = false;
   const onScroll = () => {
@@ -503,6 +593,7 @@ function initChrome(){
       prog.style.width = h > 40 ? ((y / h) * 100).toFixed(2) + '%' : '0';
       prog.style.opacity = h > 40 && y > 8 ? '1' : '0';
       paintStrata();
+      rememberScroll();
       ticking = false;
     });
   };
@@ -540,7 +631,7 @@ function initHero(onProgress){
         sub.textContent = currentLang() === 'ko'
           ? `${item.kr} — ${item.meta}`
           : item.meta;
-        now.parentElement.setAttribute('href', item.href);
+        now.parentElement.setAttribute('href', canonicalPath(item.href.slice(1)));
         now.classList.remove('swapping');
       }, REDUCED ? 0 : 190);
       ticks.forEach((b, j) => {
@@ -597,7 +688,7 @@ function boot(){
       document.body.classList.remove('is-locked');
       /* The stack starts its auto-cycle while the preloader is still visible.
          Reset it here so the first work receives a full viewing interval. */
-      if(stack) stack.resume();
+      if(stack && currentView === 'v-home') stack.resume();
       bindView($('.view.active'));
       measure(); paintStrata();
     }, 220);
@@ -619,7 +710,8 @@ function boot(){
   guard('lang',   initLang);
   guard('chrome', initChrome);
   guard('index',  initIndex);
-  guard('render', () => render(true));
+  guard('navigation', initNavigation);
+  guard('render', () => render(true, { restore:history.state?.scrollY }));
   stack = guard('hero', () => initHero(setProgress));
   if(!stack) setProgress(1);
 

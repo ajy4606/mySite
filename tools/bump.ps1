@@ -20,7 +20,7 @@ $files = @(
 # 현재 값 찾기
 $current = $null
 foreach ($f in $files) {
-  $m = [regex]::Match((Get-Content $f -Raw -Encoding UTF8), '\.(?:css|js)\?v=([\w\-\.]+)')
+  $m = [regex]::Match((Get-Content $f -Raw -Encoding UTF8), '\.(?:css|m?js)\?v=([\w\-\.]+)')
   if ($m.Success) { $current = $m.Groups[1].Value; break }
 }
 if (-not $current) { Write-Host "?v= 표시를 못 찾았습니다. 중단합니다." -ForegroundColor Red; exit 1 }
@@ -37,7 +37,7 @@ $count = 0
 foreach ($f in $files) {
   $text = Get-Content $f -Raw -Encoding UTF8
   # Image versions are content hashes. Never replace them with a CSS/JS date.
-  $pattern = '(\.(?:css|js)\?v=)[\w\-\.]+'
+  $pattern = '(\.(?:css|m?js)\?v=)[\w\-\.]+'
   $hits = ([regex]::Matches($text, $pattern)).Count
   if ($hits -gt 0) {
     $updated = [regex]::Replace($text, $pattern, { param($m) $m.Groups[1].Value + $new })

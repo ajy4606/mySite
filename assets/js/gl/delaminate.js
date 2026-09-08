@@ -9,7 +9,7 @@
    ============================================================ */
 
 import * as THREE from '../../vendor/three.module.min.js';
-import { VERT, FRAG_DELAM } from './shaders.js?v=20260907';
+import { VERT, FRAG_DELAM } from './shaders.js?v=20260908';
 
 const lerp  = (a,b,t) => a + (b-a)*t;
 const clamp = (v,a,b) => Math.min(b, Math.max(a, v));
@@ -67,16 +67,19 @@ function build(){
         <div class="dlm-read">
           <span class="scale">물성 조절 · Viscosity — <span class="dlm-desktop-instruction"><span class="l-ko">드래그하여 층을 해체</span><span class="l-en">drag to take the layers apart</span></span><span class="dlm-mobile-instruction"><span class="l-ko">핀치 확대 · 강도는 아래 바</span><span class="l-en">pinch zoom · use the bar</span></span></span>
           <span class="hint"></span>
+          <button class="dlm-effects-toggle" type="button" aria-expanded="false" aria-controls="dlm-effects"><span class="l-ko">효과 조절</span><span class="l-en">Effects</span></button>
           <span class="dlm-nav">
             <button class="prev" type="button">← Prev</button>
             <button class="next" type="button">Next →</button>
           </span>
         </div>
-        <div class="dlm-track">
+        <div class="dlm-effects" id="dlm-effects">
+        <div class="dlm-track" role="slider" tabindex="0" aria-label="효과 강도 · Effect intensity" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
           <span class="fill"></span><span class="knob"></span>
         </div>
         <div class="dlm-stages">
           ${STAGE_T.map((_,i)=>`<button type="button" data-s="${i}">${String(i+1).padStart(2,'0')} <span class="sl"></span></button>`).join('')}
+        </div>
         </div>
       </div>
     </div>`;
@@ -134,7 +137,8 @@ function init(){
     next:   root.querySelector('.next'),
     hint:   root.querySelector('.hint'),
     bot:    root.querySelector('.dlm-bot'),
-    zoomReset: root.querySelector('.dlm-zoom-reset')
+    zoomReset: root.querySelector('.dlm-zoom-reset'),
+    effectsToggle: root.querySelector('.dlm-effects-toggle')
   };
 
   const state = {
@@ -153,7 +157,8 @@ function init(){
     availW:1, availH:1, centreX:0, centreY:0
   };
   const ZOOM_MAX = 4;
-  const isMobileViewer = () => window.innerWidth < 700;
+  let touchInput = false;
+  const isTouchViewer = () => touchInput || window.matchMedia('(any-pointer:coarse)').matches;
 
   function clampView(){
     if(view.zoom <= 1.001){
@@ -183,7 +188,7 @@ function init(){
   }
 
   function syncSourceView(){
-    const intact = state.tTarget <= 0.001 && (isMobileViewer() || state.t < 0.001);
+    const intact = state.tTarget <= 0.001 && (isTouchViewer() || window.innerWidth < 700 || state.t < 0.001);
     root.classList.toggle('source-view', state.open && intact && source.hasAttribute('src'));
   }
 
@@ -195,7 +200,13 @@ function init(){
   /* ---- sizing ---------------------------------------------------------- */
   function resize(){
     const W = window.innerWidth, H = window.innerHeight;
-    if(W >= 700) resetView(false);
+    const compact = H <= 520;
+    if(compact !== root.classList.contains('is-compact')){
+      root.classList.remove('effects-open');
+      ui.effectsToggle.setAttribute('aria-expanded', 'false');
+    }
+    root.classList.toggle('is-compact', compact);
+    root.classList.toggle('is-touch', isTouchViewer());
     /* Interactive treatments stay below full retina resolution so every
        series can scrub smoothly. Plain lightboxes keep the higher ceiling. */
     const plain = state.mode > 4.5 && state.mode < 5.5;
@@ -208,13 +219,10 @@ function init(){
     camera.top  =  H/2; camera.bottom = -H/2;
     camera.updateProjectionMatrix();
 
-    const padX = W < 700 ? 20 : 80;
-    const padT = W < 700 ? 74 : 96;    // caption row
-    /* The mobile controls can wrap on a narrow or short phone. Measure their
-       real top edge instead of assuming the original 168px reservation, so
-       neither the sharp source nor the WebGL plate sits behind the controls. */
-    const mobileBot = W < 700 ? Math.max(168, H - ui.bot.getBoundingClientRect().top + 8) : 150;
-    const padB = W < 700 ? mobileBot : 150;
+    const padX = W < 700 || compact ? 20 : 80;
+    // Fit to the actual controls, including short landscape and translated text.
+    const padT = Math.max(ui.cap.getBoundingClientRect().bottom, ui.close.getBoundingClientRect().bottom) + 8;
+    const padB = H - ui.bot.getBoundingClientRect().top + 8;
     const availW = Math.max(80, W - padX*2);
     const availH = Math.max(80, H - padT - padB);
 
@@ -267,7 +275,7 @@ function init(){
       /* Phones open on the intact source image. Starting from the fully
          decomposed shader state looked like compression damage on a small
          display; the treatment is still available from the stage bar. */
-      state.t = window.innerWidth < 700 ? 0 : 1;
+      state.t = isTouchViewer() || window.innerWidth < 700 ? 0 : 1;
       state.tTarget = 0;
       mat.uniforms.uT.value = state.t;
       mat.uniforms.uFade.value = 0;
@@ -280,6 +288,7 @@ function init(){
       syncSourceView();
       if(state.onShow) state.onShow(item);
       paintHud();
+      resize();
     };
 
     const fail = () => {
@@ -325,6 +334,7 @@ function init(){
     const p = clamp(state.tTarget, 0, 1);
     ui.fill.style.width = (p*100).toFixed(2) + '%';
     ui.knob.style.left  = (p*100).toFixed(2) + '%';
+    ui.track.setAttribute('aria-valuenow', String(Math.round(p*100)));
     let active = 0;
     stageStops(state.mode).forEach((tv,i) => { if(p >= tv - 0.001) active = i; });
     /* mode 5 has no stage set. Falling back to another series' names printed
@@ -334,6 +344,7 @@ function init(){
     if(names){
       ui.stages.forEach((b,i) => {
         b.classList.toggle('on', i === active);
+        b.setAttribute('aria-pressed', String(i === active));
         const sl = b.querySelector('.sl');
         if(sl) sl.textContent = names[i][0] + ' · ' + names[i][1];
       });
@@ -344,6 +355,7 @@ function init(){
     ui.hint.textContent = (pos && names)
       ? `${pos}  ·  ${names[active][0].toUpperCase()} ${Math.round(p*100)}%`
       : pos;
+    if(names) ui.track.setAttribute('aria-valuetext', `${Math.round(p*100)}% · ${names[active].join(' · ')}`);
   }
 
   function setT(v){
@@ -408,7 +420,9 @@ function init(){
   }
 
   canvas.addEventListener('pointerdown', (e) => {
-    if(isMobileViewer() && e.pointerType === 'touch'){
+    if(e.pointerType === 'touch'){
+      touchInput = true;
+      root.classList.add('is-touch');
       /* Start a viewing gesture on the artwork itself. The fullscreen canvas
          also covers the captions and blank surround; accepting touches there
          made an accidental pinch or pan feel as if the whole page were stuck. */
@@ -426,7 +440,7 @@ function init(){
     canvas.setPointerCapture(e.pointerId);
   });
   canvas.addEventListener('pointermove', (e) => {
-    if(isMobileViewer() && e.pointerType === 'touch' && touches.has(e.pointerId)){
+    if(e.pointerType === 'touch' && touches.has(e.pointerId)){
       const point = { id:e.pointerId, x:e.clientX, y:e.clientY };
       touches.set(e.pointerId, point);
       if(touches.size >= 2 && pinch){
@@ -451,7 +465,7 @@ function init(){
     setT(st + (e.clientX - sx) / (window.innerWidth * 0.62));
   });
   const endDrag = (e) => {
-    if(e && isMobileViewer() && e.pointerType === 'touch' && touches.has(e.pointerId)){
+    if(e && e.pointerType === 'touch' && touches.has(e.pointerId)){
       const point = touches.get(e.pointerId);
       const wasSingle = touches.size === 1;
       const wasTap = wasSingle && !gestureMoved && pan &&
@@ -510,6 +524,21 @@ function init(){
   };
   ui.track.addEventListener('pointerup', endTrack);
   ui.track.addEventListener('pointercancel', endTrack);
+  ui.track.addEventListener('keydown', e => {
+    const steps = { ArrowLeft:-.01, ArrowDown:-.01, ArrowRight:.01, ArrowUp:.01, PageDown:-.1, PageUp:.1 };
+    if(!(e.key in steps) && e.key !== 'Home' && e.key !== 'End') return;
+    e.preventDefault(); e.stopPropagation();
+    setT(e.key === 'Home' ? 0 : e.key === 'End' ? 1 : state.tTarget + steps[e.key]);
+  });
+  ui.effectsToggle.addEventListener('click', () => {
+    const open = root.classList.toggle('effects-open');
+    ui.effectsToggle.setAttribute('aria-expanded', String(open));
+    resize();
+  });
+  const controlsObserver = new ResizeObserver(() => {
+    if(state.open) requestAnimationFrame(resize);
+  });
+  controlsObserver.observe(ui.bot);
   ui.stages.forEach((b,i) => b.addEventListener('click', () => setT(stageStops(state.mode)[i])));
   ui.zoomReset.addEventListener('click', () => resetView());
   ui.close.addEventListener('click', () => close(false));
@@ -522,7 +551,7 @@ function init(){
     if(e.key === 'Tab'){
       /* aria-modal should behave like one: keep keyboard focus inside the
          viewer instead of letting it disappear into the page underneath. */
-      const focusable = [...root.querySelectorAll('button:not([disabled])')]
+      const focusable = [...root.querySelectorAll('button:not([disabled]), [tabindex="0"]')]
         .filter(el => el.getClientRects().length && getComputedStyle(el).visibility !== 'hidden');
       if(focusable.length){
         const first = focusable[0], last = focusable[focusable.length - 1];
@@ -534,8 +563,8 @@ function init(){
       }
       return;
     }
-    if(e.key === 'ArrowLeft'  && state.idx > 0){ show(state.idx - 1); return; }
-    if(e.key === 'ArrowRight' && state.idx < state.list.length - 1){ show(state.idx + 1); return; }
+    if(e.key === 'ArrowLeft'  && state.idx > 0){ e.preventDefault(); show(state.idx - 1); return; }
+    if(e.key === 'ArrowRight' && state.idx < state.list.length - 1){ e.preventDefault(); show(state.idx + 1); return; }
     const n = parseInt(e.key, 10);
     if(n >= 1 && n <= 4) setT(stageStops(state.mode)[n-1]);
   });
@@ -565,6 +594,8 @@ function init(){
     state.mode = (opts && typeof opts.mode === 'number') ? opts.mode : 2;
     mat.uniforms.uMode.value = state.mode;
     resetView(false);
+    root.classList.remove('effects-open');
+    ui.effectsToggle.setAttribute('aria-expanded', 'false');
 
     /* mode 5 alone has nothing to scrub through — it is a plain lightbox.
        Anything above it is a real treatment and keeps its scrubber. */
@@ -575,7 +606,7 @@ function init(){
        leave it rather than the site. Pushing a state that does not touch the
        hash keeps the hash router out of it. */
     if(!pushed){
-      try{ history.pushState({ dlm:1 }, '', location.href); pushed = true; }catch(e){}
+      try{ history.pushState({ ...history.state, dlm:1 }, '', location.href); pushed = true; }catch(e){}
     }
     state.lastFocus = document.activeElement;
     document.body.classList.add('is-locked');
