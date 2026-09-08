@@ -402,33 +402,12 @@ html[data-lang="en"] .row .kr{visibility:hidden}
 }
 .card:nth-child(1),.card:nth-child(6){grid-column:span 5}
 .card:nth-child(2),.card:nth-child(5){grid-column:span 7}
-/* Hovering does not enlarge the plate — nothing on this site grows on
-   approach. The screen resolves over it and the registration frame lands,
-   the same two marks the full-size plates carry. */
+/* Grid images remain visually unchanged on hover. */
 .card figure{
   position:relative;overflow:hidden;background:var(--ground-lift);
   isolation:isolate;
 }
-.card img{
-  width:100%;height:auto;display:block;
-  filter:none;
-  transition:filter .55s var(--ease);
-}
-.card figure::before{
-  content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
-  background-image:radial-gradient(circle at 50% 50%, rgba(236,234,229,.9) 0 26%, transparent 27%);
-  background-size:6px 6px;
-  mix-blend-mode:screen;
-  opacity:0;transition:opacity .55s var(--ease);
-}
-.card figure::after{
-  content:"";position:absolute;inset:0;z-index:3;pointer-events:none;
-  border:1px solid var(--ink);
-  opacity:0;transition:opacity .4s var(--ease);
-}
-.card:hover img{filter:grayscale(0) brightness(1)}
-.card:hover figure::before{opacity:.10}
-.card:hover figure::after{opacity:.45}
+.card img{width:100%;height:auto;display:block;filter:none}
 
 /* The two halves sit at opposite ends of the card. A long title in a narrow
    card — 「Hwanggok_Colorized」 in a 5-column slot — left 14px between them and
@@ -440,16 +419,12 @@ html[data-lang="en"] .row .kr{visibility:hidden}
 }
 .card .cap b{
   font-weight:300;font-size:16px;letter-spacing:-.02em;
-  transition:transform .5s var(--ease);
 }
 .card .cap span{
   font-family:var(--mono);font-size:10px;letter-spacing:.13em;
   text-transform:uppercase;color:var(--ink-3);
   white-space:nowrap;
-  transition:color .4s var(--ease);
 }
-.card:hover .cap b{transform:translateX(9px)}
-.card:hover .cap span{color:var(--ink)}
 
 .hide{display:none !important}
 
@@ -534,7 +509,7 @@ html[data-lang="en"] .row .kr{visibility:hidden}
   aspect-ratio:var(--ar,1.333);
   background:var(--ground-lift);
   overflow:hidden;
-  cursor:crosshair;
+  cursor:zoom-in;
   isolation:isolate;
 }
 .strata > img{
@@ -573,24 +548,9 @@ html[data-lang="en"] .row .kr{visibility:hidden}
 .strata i:nth-of-type(4){--dir: 1.4}
 .strata i:nth-of-type(5){--dir:-1.9}
 
-.strata::after{  /* registration frame on hover */
-  content:"";position:absolute;inset:0;z-index:4;
-  border:1px solid var(--ink);opacity:0;
-  transition:opacity var(--t-med) var(--ease);
-  pointer-events:none;
-}
-.strata:hover::after{opacity:.55}
-
-.plate .tag{
-  position:absolute;z-index:5;top:12px;left:12px;
-  font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;
-  color:var(--ink);background:var(--ground-deep);
-  padding:5px 9px;
-  opacity:0;transform:translateY(-4px);
-  transition:opacity var(--t-med) var(--ease),transform var(--t-med) var(--ease);
-  pointer-events:none;
-}
-.plate:hover .tag{opacity:1;transform:none}
+/* Artwork stays visually untouched on approach. It remains clickable to open
+   the viewer, but no frame or DELAMINATE badge is painted over the image. */
+.plate .tag{display:none}
 
 .plate figcaption{
   display:flex;justify-content:space-between;gap:20px;
@@ -1165,7 +1125,10 @@ html[data-lang="en"] .row .kr{visibility:hidden}
 }
 
 /* ---------- 20. reduced motion ------------------------------------------ */
-.project-summary{max-width:66ch;margin:28px 0 0;color:var(--ink-2);font-size:15px;line-height:1.85}
+.project-summary{
+  max-width:72ch;margin:28px 0 0;color:var(--ink-2);font-size:15px;line-height:1.85;
+  text-wrap:pretty;
+}
 .context-links{display:flex;flex-wrap:wrap;gap:4px 24px;margin-top:12px;font-size:12px;letter-spacing:.015em}
 .context-links a{display:inline-flex;align-items:center;min-height:44px;color:var(--ink-2);text-decoration:underline;text-decoration-color:var(--line-strong);text-underline-offset:5px}
 .context-links a:hover{color:var(--ink)}

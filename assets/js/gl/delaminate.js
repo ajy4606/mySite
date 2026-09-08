@@ -9,7 +9,7 @@
    ============================================================ */
 
 import * as THREE from '../../vendor/three.module.min.js';
-import { VERT, FRAG_DELAM } from './shaders.js?v=20260908';
+import { VERT, FRAG_DELAM } from './shaders.js?v=20260908-2';
 
 const lerp  = (a,b,t) => a + (b-a)*t;
 const clamp = (v,a,b) => Math.min(b, Math.max(a, v));

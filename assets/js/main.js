@@ -4,9 +4,9 @@
 
 /* Bump this query whenever stack.js changes — assets are served with a
    one-hour cache and browsers will otherwise keep the old module. */
-import { createStack }  from './gl/stack.js?v=20260908';
-import { viewer }       from './gl/delaminate.js?v=20260908';
-import { PAGES, canonicalPath, resolvePage } from './pages.mjs?v=20260908';
+import { createStack }  from './gl/stack.js?v=20260908-2';
+import { viewer }       from './gl/delaminate.js?v=20260908-2';
+import { PAGES, canonicalPath, resolvePage } from './pages.mjs?v=20260908-2';
 
 const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
