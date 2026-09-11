@@ -1,6 +1,6 @@
 // Shared by the browser router and the static-page build. No project ranking.
 export const PAGES = {
-  '/': { id:'v-home', title:'Ahn Jaeyoung — Portfolio', work:'midore', description:'안재영의 사진 기반 작업. 미도래, 풀 메탈 플랜트, 황곡 컬러라이즈드, 황곡과 전시 기록.' },
+  '/': { id:'v-home', title:'안재영 Ahn Jaeyoung — 사진 기반 시각예술 포트폴리오', work:'midore', description:'안재영(Ahn Jaeyoung)의 사진 기반 시각예술 포트폴리오. 촬영, 3D 렌더링, 생성 모델을 활용한 미도래, 풀 메탈 플랜트, 황곡 컬러라이즈드, 황곡과 전시 기록, 비평, 작가 소개.' },
   '/midore': { id:'v-midore', title:'Midore · 미도래 — Ahn Jaeyoung', work:'midore', description:'점, 픽셀, 텍스처 데이터의 침투와 중첩을 다루는 안재영의 사진 작업 《미도래》.' },
   '/full-metal-plant': { id:'v-full-metal-plant', title:'Full Metal Plant — Ahn Jaeyoung', work:'full-metal-plant', description:'생성 모델과 철의 질감 렌더링을 통해 반려 식물의 성질을 재고하는 안재영의 작업.' },
   '/hwanggok-colorized': { id:'v-hwanggok-colorized', title:'Hwanggok_Colorized — Ahn Jaeyoung', work:'hwanggok-colorized', description:'흑백으로 전환한 사진에 생성 모델로 색을 입혀 관념화된 도시 황곡을 시각화한 작업.' },
@@ -11,7 +11,22 @@ export const PAGES = {
   '/text-midorepreface': { id:'v-text-midorepreface', title:'아직 도래하지 않은, 그러나 이미 도래한 — Ahn Jaeyoung', work:'midore', description:'나선의 《미도래》 전시 서문. 안재영의 이미지 생성 방식과 사진에 대한 인식의 변화를 다룬 글.' },
   '/info': { id:'v-info', title:'Info — Ahn Jaeyoung', work:'midore', description:'안재영 작가 소개, 작가 노트, 학력, 전시 이력과 수상 기록.' }
 };
+for (const [route, page] of Object.entries(PAGES)) {
+  if (route !== '/') page.title = page.title.replace('— Ahn Jaeyoung', '— 안재영 Ahn Jaeyoung');
+}
 export const canonicalPath = path => path === '/' ? '/' : path + '/';
+
+// Shared metadata for direct visits and client-side navigation.
+export function pageSchema(route, image) {
+  const page = PAGES[route];
+  const origin = 'https://ahnjaeyoung.com';
+  const url = origin + canonicalPath(route);
+  const artist = { '@type':'Person', '@id':origin + '/#artist', name:'안재영', alternateName:'Ahn Jaeyoung', jobTitle:'Artist', url:origin + '/' };
+  const website = { '@type':'WebSite', '@id':origin + '/#website', name:'안재영 Ahn Jaeyoung', url:origin + '/', creator:{ '@id':artist['@id'] }, inLanguage:['ko','en'] };
+  const webPage = { '@type':route === '/info' ? 'ProfilePage' : 'WebPage', '@id':url + '#webpage', url, name:page.title, description:page.description, inLanguage:['ko','en'], isPartOf:{ '@id':website['@id'] }, about:{ '@id':artist['@id'] }, primaryImageOfPage:{ '@type':'ImageObject', url:image } };
+  if (route === '/info') webPage.mainEntity = { '@id':artist['@id'] };
+  return { '@context':'https://schema.org', '@graph':[artist, website, webPage] };
+}
 export function resolvePage(url){
   const target = url.hash.startsWith('#/') ? new URL(url.hash.slice(1), url.origin) : url;
   let path = target.pathname.replace(/\/+$/, '') || '/';

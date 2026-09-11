@@ -8,7 +8,7 @@ const DOMAIN = 'https://ahnjaeyoung.com';
 const esc = value => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 (async () => {
-  const { PAGES, canonicalPath, resolvePage } = await import(pathToFileURL(path.join(ROOT, 'assets/js/pages.mjs')));
+  const { PAGES, canonicalPath, resolvePage, pageSchema } = await import(pathToFileURL(path.join(ROOT, 'assets/js/pages.mjs')));
   let source = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   // Mechanical migration is idempotent. Old incoming hash URLs remain supported
   // by the router; outgoing links are useful even without JavaScript.
@@ -29,7 +29,18 @@ const esc = value => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replac
     const image = row?.[0].match(/data-peek="([^"]+)"/)?.[1];
     if(!image) throw new Error(`Missing share image: ${route}`);
     const url = DOMAIN + canonicalPath(route);
+    const shareImage = new URL(image, DOMAIN + '/').href;
+    const extra = `<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:site_name" content="안재영 Ahn Jaeyoung">
+<meta property="og:image:alt" content="${esc(page.title)}">
+<meta name="twitter:title" content="${esc(page.title)}">
+<meta name="twitter:description" content="${esc(page.description)}">
+<meta name="twitter:image" content="${esc(shareImage)}">
+<meta name="twitter:image:alt" content="${esc(page.title)}">`;
     return source
+      .replace(/<!-- SEO extras -->[\s\S]*?<!-- \/SEO extras -->\s*/g, '')
+      .replace('</head>', `<!-- SEO extras -->\n${extra}\n<!-- /SEO extras -->\n</head>`)
+      .replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/, `<script type="application/ld+json">${JSON.stringify(pageSchema(route, shareImage)).replace(/</g, '\\u003c')}</script>`)
       .replace(/<section class="view(?: active)?" id="([^"]+)"/g, (_, id) => `<section class="view${id === page.id ? ' active' : ''}" id="${id}"`)
       .replace(/<title>[\s\S]*?<\/title>/, `<title>${esc(page.title)}</title>`)
       .replace(/(<meta name="description" content=")[^"]*"/, `$1${esc(page.description)}"`)
@@ -50,7 +61,12 @@ const esc = value => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replac
     fs.writeFileSync(target, text);
   }
   for(const route of Object.keys(PAGES)) output(route === '/' ? 'index.html' : route.slice(1) + '/index.html', render(route));
-  output('sitemap.xml', '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
-    Object.keys(PAGES).map(route => `  <url><loc>${DOMAIN + canonicalPath(route)}</loc></url>`).join('\n') + '\n</urlset>\n');
+  output('sitemap.xml', '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n' +
+    Object.keys(PAGES).map(route => {
+      const start = source.indexOf(`id="${PAGES[route].id}"`);
+      const section = source.slice(start, source.indexOf('</section>', start));
+      const images = [...new Set([...section.matchAll(/<img\b[^>]*src="([^"]+)"[^>]*alt="([^"]+)"/g)].map(m => new URL(m[1].split('?')[0], DOMAIN + '/').href))];
+      return `  <url><loc>${DOMAIN + canonicalPath(route)}</loc>${images.map(src => `<image:image><image:loc>${esc(src)}</image:loc></image:image>`).join('')}</url>`;
+    }).join('\n') + '\n</urlset>\n');
   console.log(`Static pages: ${Object.keys(PAGES).length}; updated: ${changed}`);
 })().catch(error => { console.error(error); process.exitCode = 1; });

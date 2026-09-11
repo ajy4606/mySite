@@ -4,9 +4,9 @@
 
 /* Bump this query whenever stack.js changes — assets are served with a
    one-hour cache and browsers will otherwise keep the old module. */
-import { createStack }  from './gl/stack.js?v=20260908-3';
-import { viewer }       from './gl/delaminate.js?v=20260908-3';
-import { PAGES, canonicalPath, resolvePage } from './pages.mjs?v=20260908-3';
+import { createStack }  from './gl/stack.js?v=20260912';
+import { viewer }       from './gl/delaminate.js?v=20260912';
+import { PAGES, canonicalPath, resolvePage, pageSchema } from './pages.mjs?v=20260912';
 
 const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -151,7 +151,15 @@ function updatePageMeta(path){
   $('meta[name="description"]').content = page.description;
   $('meta[property="og:description"]').content = page.description;
   const image = $(`#idx-list [data-work="v-${page.work}"]`)?.dataset.peek;
-  if(image) $('meta[property="og:image"]').content = new URL(image, 'https://ahnjaeyoung.com/').href;
+  if(image){
+    const shareImage = new URL(image, 'https://ahnjaeyoung.com/').href;
+    $('meta[property="og:image"]').content = shareImage;
+    $('meta[name="twitter:image"]').content = shareImage;
+    $('script[type="application/ld+json"]').textContent = JSON.stringify(pageSchema(path, shareImage));
+  }
+  for(const name of ['twitter:title', 'twitter:image:alt']) $(`meta[name="${name}"]`).content = page.title;
+  $('meta[property="og:image:alt"]').content = page.title;
+  $('meta[name="twitter:description"]').content = page.description;
 }
 
 function render(instant, options = {}){
