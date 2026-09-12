@@ -10,6 +10,10 @@ const read = file => fs.readFileSync(path.join(ROOT, file), 'utf8');
 (async () => {
   const { PAGES, resolvePage, canonicalPath } = await import(pathToFileURL(path.join(ROOT, 'assets/js/pages.mjs')));
   const html = read('index.html');
+  // Zoom originals must only load after opening a viewer, even on retina screens.
+  for(const image of html.matchAll(/<img\b[^>]*>/g)){
+    assert.ok(!/\b(?:src|srcset)="[^"]*-full\.jpg/.test(image[0]), 'Zoom original used in page image');
+  }
   for(const [route, page] of Object.entries(PAGES)){
     const file = route === '/' ? 'index.html' : route.slice(1) + '/index.html';
     const generated = read(file);

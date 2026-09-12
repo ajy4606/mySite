@@ -26,9 +26,9 @@ const TODO_WORK = '<span class="todo">매체 · 크기 입력</span>';
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const dim = s => s.replace(/(\d+)\s*[xX×]\s*(\d+)\s*cm/, '$1 × $2 cm');
 const fullAttr = item => item.full ? ` data-full="${esc(item.full)}"` : '';
-const responsive = item => item.full && item.fullW > item.w
-  ? ` srcset="${esc(item.file)} ${item.w}w, ${esc(item.full)} ${item.fullW}w" sizes="auto, (max-width:699px) calc(100vw - 36px), 90vw"`
-  : '';
+// Keep full-resolution files exclusive to the viewer (data-full).
+// A high-DPI screen must not download every zoom original while scrolling.
+const responsive = () => ' decoding="async"';
 
 /* 파일 이름이 곧 캡션입니다. 형식은 네 시리즈 모두 같습니다:
 

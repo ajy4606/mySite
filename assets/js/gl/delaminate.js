@@ -9,7 +9,7 @@
    ============================================================ */
 
 import * as THREE from '../../vendor/three.module.min.js';
-import { VERT, FRAG_DELAM } from './shaders.js?v=20260912';
+import { VERT, FRAG_DELAM } from './shaders.js?v=20260912-2';
 
 const lerp  = (a,b,t) => a + (b-a)*t;
 const clamp = (v,a,b) => Math.min(b, Math.max(a, v));
@@ -65,7 +65,7 @@ function build(){
       </div>
       <div class="dlm-bot">
         <div class="dlm-read">
-          <span class="scale">물성 조절 · Viscosity — <span class="dlm-desktop-instruction"><span class="l-ko">드래그하여 층을 해체</span><span class="l-en">drag to take the layers apart</span></span><span class="dlm-mobile-instruction"><span class="l-ko">핀치 확대 · 강도는 아래 바</span><span class="l-en">pinch zoom · use the bar</span></span></span>
+          <span class="scale">물성 조절 · Viscosity — <span class="dlm-desktop-instruction"><span class="l-ko">휠로 확대 · 확대 후 드래그로 이동 · 효과는 아래 바</span><span class="l-en">wheel to zoom · drag to pan when zoomed · effects below</span></span><span class="dlm-mobile-instruction"><span class="l-ko">핀치 확대 · 강도는 아래 바</span><span class="l-en">pinch zoom · use the bar</span></span></span>
           <span class="hint"></span>
           <button class="dlm-effects-toggle" type="button" aria-expanded="false" aria-controls="dlm-effects"><span class="l-ko">효과 조절</span><span class="l-en">Effects</span></button>
           <span class="dlm-nav">
@@ -419,6 +419,19 @@ function init(){
     lastTapAt = 0;
   }
 
+  canvas.addEventListener('wheel', (e) => {
+    if(!state.open || root.classList.contains('is-loading')) return;
+    e.preventDefault();
+    const delta = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? view.availH : 1);
+    const nextZoom = clamp(view.zoom * Math.exp(-clamp(delta, -240, 240) * 0.002), 1, ZOOM_MAX);
+    const anchorX = (e.clientX - view.centreX - view.panX) / view.zoom;
+    const anchorY = (e.clientY - view.centreY - view.panY) / view.zoom;
+    view.zoom = nextZoom;
+    view.panX = e.clientX - view.centreX - anchorX * nextZoom;
+    view.panY = e.clientY - view.centreY - anchorY * nextZoom;
+    applyView();
+  }, { passive:false });
+
   canvas.addEventListener('pointerdown', (e) => {
     if(e.pointerType === 'touch'){
       touchInput = true;
@@ -432,6 +445,13 @@ function init(){
       try{ canvas.setPointerCapture(e.pointerId); }catch(err){}
       if(touches.size === 1){ beginPan(point); gestureMoved = false; }
       else if(touches.size === 2) beginPinch();
+      e.preventDefault();
+      return;
+    }
+    if(e.button !== 0) return;
+    if(view.zoom > 1.001){
+      beginPan({ id:e.pointerId, x:e.clientX, y:e.clientY });
+      canvas.setPointerCapture(e.pointerId);
       e.preventDefault();
       return;
     }
@@ -459,6 +479,12 @@ function init(){
         applyView();
       }
       e.preventDefault();
+      return;
+    }
+    if(pan && pan.id === e.pointerId && e.pointerType !== 'touch'){
+      view.panX = pan.panX + e.clientX - pan.x;
+      view.panY = pan.panY + e.clientY - pan.y;
+      applyView();
       return;
     }
     if(!dragging) return;
@@ -495,6 +521,7 @@ function init(){
       }
       return;
     }
+    pan = null;
     dragging = false;
     if(e && e.pointerId != null && canvas.hasPointerCapture(e.pointerId))
       canvas.releasePointerCapture(e.pointerId);
