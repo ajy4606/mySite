@@ -9,7 +9,7 @@
    ============================================================ */
 
 import * as THREE from '../../vendor/three.module.min.js';
-import { VERT, FRAG_DELAM } from './shaders.js?v=20260912-2';
+import { VERT, FRAG_DELAM } from './shaders.js?v=20260915';
 
 const lerp  = (a,b,t) => a + (b-a)*t;
 const clamp = (v,a,b) => Math.min(b, Math.max(a, v));
@@ -256,8 +256,17 @@ function init(){
     const imageSrc = item.full || item.src;
     const ticket = ++loadSeq;
 
-    /* Keep the current plate and its metadata paired until the next texture
-       is ready, instead of advancing the caption over the previous image. */
+    /* A new selection starts as a clean viewing state. Keeping the previous
+       texture visible while a large file loaded also kept its zoom and layer
+       treatment on screen, which made the newly clicked plate look stale. */
+    state.t = 0;
+    state.tTarget = 0;
+    mat.uniforms.uT.value = 0;
+    mat.uniforms.uFade.value = 0;
+    mat.uniforms.uTex.value = null;
+    source.removeAttribute('src');
+    resetView(false);
+    root.classList.remove('source-view');
     root.classList.add('is-loading');
     root.setAttribute('aria-busy', 'true');
     ui.prev.disabled = true;
@@ -271,7 +280,6 @@ function init(){
       mat.uniforms.uSeed.value = seedFor((item.src || String(nextIdx)).split('?')[0]);
       state.aspect = tex.image.width / tex.image.height;
       resetView(false);
-      resize();
       /* Phones open on the intact source image. Starting from the fully
          decomposed shader state looked like compression damage on a small
          display; the treatment is still available from the stage bar. */

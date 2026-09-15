@@ -48,6 +48,7 @@ const read = file => fs.readFileSync(path.join(ROOT, file), 'utf8');
   assert.ok(!/\.strata:hover::after/.test(css), 'Artwork hover frame returned');
   assert.ok(css.includes('h1[tabindex="-1"]:focus{outline:none}'), 'Programmatic heading focus outline returned');
   assert.ok(css.includes('max-width:88ch'), 'Project summary measure regressed');
+  assert.ok(!/\.layer-stack:hover li[^\{]*\{[^}]*transform/.test(css), 'Layer hover movement returned');
   const viewer = read('assets/js/gl/delaminate.js');
   assert.ok(!viewer.includes('isMobileViewer()'), 'Touch handling still depends on viewport width');
   assert.ok(viewer.includes('role="slider"'));
