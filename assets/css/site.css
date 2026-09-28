@@ -195,7 +195,8 @@ body.scrolled .hdr{
 /* progress hairline */
 .prog{
   position:absolute;top:0;left:0;height:1px;z-index:1;
-  background:var(--ink);width:0;
+  background:var(--ink);width:100%;transform:scaleX(0);transform-origin:0 50%;
+  will-change:transform;
   transition:opacity .3s var(--ease);
   pointer-events:none;
 }

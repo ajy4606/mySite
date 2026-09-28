@@ -126,7 +126,7 @@ const NAV_FOR = {
 
 let currentView = null;
 let stack = null;
-let routeTimer = 0, routing = false, homeScroll = 0;
+let routeTimer = 0, scrollStateTimer = 0, routing = false, homeScroll = 0;
 let closeMenu = () => {};
 
 function parseHash(){
@@ -134,10 +134,18 @@ function parseHash(){
   return { ...route, params:new URLSearchParams(route.search) };
 }
 
-function rememberScroll(){
+function rememberScroll(defer = false){
   if(routing || !currentView || document.body.classList.contains('is-locked')) return;
-  if(currentView === 'v-home') homeScroll = window.scrollY;
-  history.replaceState({ ...history.state, scrollY:window.scrollY }, '', location.href);
+  const y = window.scrollY;
+  if(currentView === 'v-home') homeScroll = y;
+  const commit = () => {
+    scrollStateTimer = 0;
+    if(routing || !currentView || document.body.classList.contains('is-locked')) return;
+    history.replaceState({ ...history.state, scrollY:window.scrollY }, '', location.href);
+  };
+  clearTimeout(scrollStateTimer);
+  if(defer) scrollStateTimer = window.setTimeout(commit, 140);
+  else commit();
 }
 
 function updatePageMeta(path){
@@ -598,15 +606,25 @@ function initChrome(){
       const h = Math.max(0, document.documentElement.scrollHeight - viewportH);
       const y = Math.min(h, Math.max(0, window.scrollY));
       document.body.classList.toggle('scrolled', y > 8);
-      prog.style.width = h > 40 ? ((y / h) * 100).toFixed(2) + '%' : '0';
+      const progress = h > 40 ? y / h : 0;
+      prog.style.transform = `scaleX(${progress.toFixed(5)})`;
       prog.style.opacity = h > 40 && y > 8 ? '1' : '0';
       paintStrata();
-      rememberScroll();
+      /* Persist after the gesture settles. history.replaceState on every
+         animation frame can block progress painting during a fast flick. */
+      rememberScroll(true);
       ticking = false;
     });
   };
   window.addEventListener('scroll', onScroll, { passive:true });
+  window.addEventListener('scrollend', onScroll, { passive:true });
   window.addEventListener('resize', () => { measure(); paintStrata(); onScroll(); }, { passive:true });
+  /* Lazy media and font metrics can change the scrollable height without a
+     scroll event. Keep the progress ratio tied to the final document size. */
+  if('ResizeObserver' in window){
+    const progressResize = new ResizeObserver(onScroll);
+    progressResize.observe(document.documentElement);
+  }
   onScroll();
 }
 

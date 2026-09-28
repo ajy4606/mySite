@@ -36,6 +36,11 @@ const read = file => fs.readFileSync(path.join(ROOT, file), 'utf8');
   assert.ok(!/href="(?:mailto:|https?:\/\/(?:www\.)?instagram\.com)/i.test(html), 'Contact links must stay absent');
   for(const slug of ['midore','full-metal-plant','hwanggok-colorized','hwanggok']){
     assert.ok(html.includes(`id="${slug}-note"`));
+    const start = html.indexOf(`id="v-${slug}"`);
+    const header = html.slice(start, html.indexOf('</header>', start));
+    assert.deepEqual([...header.matchAll(/<dt>([^<]+)<\/dt>/g)].map(match => match[1]), ['Year', 'Process'], `${slug} detail metadata`);
+    assert.ok(!header.includes('class="project-summary"'), `${slug} ambiguous detail summary returned`);
+    assert.ok(header.includes('class="context-links"'), `${slug} context links missing`);
   }
   // The review did not authorize changing any artwork or installation order.
   const before = execFileSync('git', ['show', '90351a8:index.html'], { cwd:ROOT, encoding:'utf8', maxBuffer:2e6 });
@@ -47,7 +52,6 @@ const read = file => fs.readFileSync(path.join(ROOT, file), 'utf8');
   assert.ok(css.includes('.plate .tag{display:none}'), 'Artwork hover badge returned');
   assert.ok(!/\.strata:hover::after/.test(css), 'Artwork hover frame returned');
   assert.ok(css.includes('h1[tabindex="-1"]:focus{outline:none}'), 'Programmatic heading focus outline returned');
-  assert.ok(css.includes('max-width:88ch'), 'Project summary measure regressed');
   assert.ok(!/\.layer-stack:hover li[^\{]*\{[^}]*transform/.test(css), 'Layer hover movement returned');
   const viewer = read('assets/js/gl/delaminate.js');
   assert.ok(!viewer.includes('isMobileViewer()'), 'Touch handling still depends on viewport width');
