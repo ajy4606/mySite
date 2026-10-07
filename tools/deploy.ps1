@@ -2,6 +2,7 @@ param(
   [switch]$All,
   [switch]$SkipImages,
   [string]$Message,
+  [string]$Python,
   [switch]$Help
 )
 
@@ -74,6 +75,12 @@ Step 3 'Refreshing browser cache versions'
 Stop-OnFailure 'cache version refresh'
 
 Step 4 'Building static project pages and share metadata'
+if (-not $Python) {
+  $responsivePython = Join-Path ([Environment]::GetFolderPath('UserProfile')) '.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe'
+  $Python = if (Test-Path -LiteralPath $responsivePython) { $responsivePython } else { (Get-Command python -ErrorAction Stop).Source }
+}
+& $Python (Join-Path $PSScriptRoot 'build-responsive.py')
+Stop-OnFailure 'responsive image generation'
 & node (Join-Path $PSScriptRoot 'build-pages.js')
 Stop-OnFailure 'static page generation'
 

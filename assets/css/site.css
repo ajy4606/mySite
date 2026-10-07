@@ -778,7 +778,13 @@ h1[tabindex="-1"]:focus{outline:none}
   object-fit:fill;pointer-events:none;
   transform-origin:50% 50%;will-change:transform;
 }
-.dlm.is-loading .dlm-source{opacity:0}
+.dlm.is-loading:not(.is-preview) .dlm-source{opacity:0}
+.dlm.is-loading .dlm-effects{pointer-events:none;opacity:.5}
+
+/* Keep the same typography with a larger clickable area. */
+.wordmark{min-height:44px;align-items:center}
+.essay .back{min-height:44px;display:inline-flex;align-items:center}
+.strata[aria-busy="true"]{cursor:progress}
 
 .dlm-ui{position:absolute;inset:0;z-index:2;pointer-events:none;padding:var(--m);display:flex;flex-direction:column;justify-content:space-between}
 .dlm-ui > *{pointer-events:auto}

@@ -4,9 +4,7 @@
 
 /* Bump this query whenever stack.js changes — assets are served with a
    one-hour cache and browsers will otherwise keep the old module. */
-import { createStack }  from './gl/stack.js?v=20260915';
-import { viewer }       from './gl/delaminate.js?v=20260915';
-import { PAGES, canonicalPath, resolvePage, pageSchema } from './pages.mjs?v=20260915';
+import { PAGES, canonicalPath, resolvePage, pageSchema } from './pages.mjs?v=20261007';
 
 const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -126,6 +124,24 @@ const NAV_FOR = {
 
 let currentView = null;
 let stack = null;
+let heroPromise = null, viewerPromise = null, viewerRequest = 0;
+let heroProgress = () => {};
+
+function ensureHero(){
+  if(!heroPromise){
+    heroPromise = import('./gl/stack.js?v=20261007').then(({ createStack }) => {
+      stack = initHero(createStack, heroProgress);
+      if(currentView !== 'v-home') stack?.pause();
+      return stack;
+    }).catch(error => {
+      console.error('[hero]', error);
+      $('#hero')?.classList.add('no-gl');
+      heroProgress(1);
+      return null;
+    });
+  }
+  return heroPromise;
+}
 let routeTimer = 0, scrollStateTimer = 0, routing = false, homeScroll = 0;
 let closeMenu = () => {};
 
@@ -206,7 +222,7 @@ function render(instant, options = {}){
 
     document.body.classList.remove('is-leaving');
 
-    if(id === 'v-home'){ stack && stack.resume(); if(!params.has('t')) clearThreadFocus(); }
+    if(id === 'v-home'){ ensureHero().then(s => { if(currentView === 'v-home') s?.resume(); }); if(!params.has('t')) clearThreadFocus(); }
     else                 stack && stack.pause();
 
     bindView(el);
@@ -416,6 +432,8 @@ function bindView(view){
     el.addEventListener('click', () => openViewer(el));
     el.setAttribute('tabindex', '0');
     el.setAttribute('role', 'button');
+    const caption = el.closest('figure')?.querySelector('figcaption span:not(.no)');
+    if(caption) el.setAttribute('aria-label', visibleText(caption));
     el.addEventListener('keydown', (e) => {
       if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); openViewer(el); }
     });
@@ -425,8 +443,8 @@ function bindView(view){
   paintResidue();
 }
 
-function openViewer(el){
-  const v = viewer();
+async function openViewer(el){
+  const request = ++viewerRequest;
   const workId = currentView;
   const group = el.closest('.plates, .inst') || el.closest('.view');
   const all   = $$('.strata[data-src]', group);
@@ -440,11 +458,21 @@ function openViewer(el){
     return {
       src: s.dataset.src,
       full: s.dataset.full || s.dataset.src,
+      preview: s.querySelector('img')?.currentSrc || s.dataset.src,
       caption: visibleText(fc?.querySelector('span:not(.no)'))
                || visibleText(fc?.querySelector('span.no'))
     };
   });
   const idx = Math.max(0, all.indexOf(el));
+
+  let v = null;
+  el.setAttribute('aria-busy', 'true');
+  try{
+    viewerPromise ||= import('./gl/delaminate.js?v=20261007');
+    v = (await viewerPromise).viewer();
+  }catch(error){ console.error('[viewer]', error); viewerPromise = null; }
+  finally{ el.removeAttribute('aria-busy'); }
+  if(request !== viewerRequest || currentView !== workId) return;
 
   if(v) v.open(list, idx, {
     mode: MODES[workId] ?? 2,
@@ -631,7 +659,7 @@ function initChrome(){
 /* ============================================================
    10. hero
    ============================================================ */
-function initHero(onProgress){
+function initHero(createStack, onProgress){
   const hero = $('#hero');
   if(!hero) return null;
 
@@ -693,6 +721,8 @@ function boot(){
   let shown = 0, target = 0, done = false;
 
   const setProgress = (v) => { target = Math.max(target, Math.min(1, v)); };
+  const homeEntry = parseHash().path === '/';
+  heroProgress = setProgress;
 
   (function tick(){
     if(done) return;
@@ -720,7 +750,8 @@ function boot(){
     }, 220);
   }
 
-  document.body.classList.add('is-locked');
+  if(homeEntry) document.body.classList.add('is-locked');
+  else pre.classList.add('done');
 
   /* The safety net goes down before anything that could throw. The preloader
      locks scrolling, so if setup died halfway the page would be frozen with no
@@ -738,8 +769,7 @@ function boot(){
   guard('index',  initIndex);
   guard('navigation', initNavigation);
   guard('render', () => render(true, { restore:history.state?.scrollY }));
-  stack = guard('hero', () => initHero(setProgress));
-  if(!stack) setProgress(1);
+  if(!homeEntry){ done = true; document.body.classList.remove('is-locked'); }
 
   const yr = $('#yr');
   if(yr) yr.textContent = new Date().getFullYear();

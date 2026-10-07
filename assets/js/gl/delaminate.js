@@ -9,7 +9,7 @@
    ============================================================ */
 
 import * as THREE from '../../vendor/three.module.min.js';
-import { VERT, FRAG_DELAM } from './shaders.js?v=20260915';
+import { VERT, FRAG_DELAM } from './shaders.js?v=20261007';
 
 const lerp  = (a,b,t) => a + (b-a)*t;
 const clamp = (v,a,b) => Math.min(b, Math.max(a, v));
@@ -188,7 +188,7 @@ function init(){
   }
 
   function syncSourceView(){
-    const intact = state.tTarget <= 0.001 && (isTouchViewer() || window.innerWidth < 700 || state.t < 0.001);
+    const intact = root.classList.contains('is-preview') || (state.tTarget <= 0.001 && (isTouchViewer() || window.innerWidth < 700 || state.t < 0.001));
     root.classList.toggle('source-view', state.open && intact && source.hasAttribute('src'));
   }
 
@@ -245,6 +245,7 @@ function init(){
     mat.uniforms.uPlanePx.value.set(w * dpr, h * dpr);
     applyView();
     syncSourceView();
+    startFrame();
   }
   window.addEventListener('resize', resize);
 
@@ -255,6 +256,7 @@ function init(){
     const item = state.list[nextIdx];
     const imageSrc = item.full || item.src;
     const ticket = ++loadSeq;
+    state.idx = nextIdx;
 
     /* A new selection starts as a clean viewing state. Keeping the previous
        texture visible while a large file loaded also kept its zoom and layer
@@ -265,13 +267,31 @@ function init(){
     mat.uniforms.uFade.value = 0;
     mat.uniforms.uTex.value = null;
     source.removeAttribute('src');
-    resetView(false);
-    root.classList.remove('source-view');
+    resetView(true);
+    root.classList.remove('source-view', 'is-preview');
     root.classList.add('is-loading');
     root.setAttribute('aria-busy', 'true');
     ui.prev.disabled = true;
     ui.next.disabled = true;
     ui.hint.textContent = `${String(nextIdx+1).padStart(2,'0')} / ${String(state.list.length).padStart(2,'0')}  ·  LOADING`;
+    ui.cap.textContent = item.caption || '';
+
+    // Show this selection's already downloaded page image while the sharp
+    // texture arrives. A ticket prevents a late preview reviving an old plate.
+    let previewShown = false;
+    const preview = new Image();
+    preview.onload = () => {
+      if(!state.open || ticket !== loadSeq || !root.classList.contains('is-loading')) return;
+      previewShown = true;
+      state.aspect = preview.naturalWidth / preview.naturalHeight;
+      source.src = preview.src;
+      root.classList.add('is-preview');
+      ui.prev.disabled = state.idx === 0;
+      ui.next.disabled = state.idx === state.list.length - 1;
+      resize();
+      syncSourceView();
+    };
+    preview.src = item.preview || item.src;
 
     const apply = (tex, url) => {
       if(!state.open || ticket !== loadSeq) return;
@@ -279,11 +299,11 @@ function init(){
       mat.uniforms.uTex.value = tex;
       mat.uniforms.uSeed.value = seedFor((item.src || String(nextIdx)).split('?')[0]);
       state.aspect = tex.image.width / tex.image.height;
-      resetView(false);
+      if(!previewShown) resetView(false);
       /* Phones open on the intact source image. Starting from the fully
          decomposed shader state looked like compression damage on a small
          display; the treatment is still available from the stage bar. */
-      state.t = isTouchViewer() || window.innerWidth < 700 ? 0 : 1;
+      state.t = previewShown || isTouchViewer() || window.innerWidth < 700 ? 0 : 1;
       state.tTarget = 0;
       mat.uniforms.uT.value = state.t;
       mat.uniforms.uFade.value = 0;
@@ -291,12 +311,13 @@ function init(){
       ui.cap.textContent = item.caption || '';
       ui.prev.disabled = state.idx === 0;
       ui.next.disabled = state.idx === state.list.length - 1;
-      root.classList.remove('is-loading');
+      root.classList.remove('is-loading', 'is-preview');
       root.removeAttribute('aria-busy');
       syncSourceView();
       if(state.onShow) state.onShow(item);
       paintHud();
       resize();
+      startFrame();
     };
 
     const fail = () => {
@@ -339,6 +360,7 @@ function init(){
 
   /* ---- hud ------------------------------------------------------------- */
   function paintHud(){
+    if(root.classList.contains('is-loading')) return;
     const p = clamp(state.tTarget, 0, 1);
     ui.fill.style.width = (p*100).toFixed(2) + '%';
     ui.knob.style.left  = (p*100).toFixed(2) + '%';
@@ -367,6 +389,7 @@ function init(){
   }
 
   function setT(v){
+    if(root.classList.contains('is-loading')) return;
     const next = clamp(v, 0, 1);
     state.tTarget = next;
     syncSourceView();
@@ -377,6 +400,7 @@ function init(){
       mat.uniforms.uT.value = next;
     }
     paintHud();
+    startFrame();
   }
 
   /* ---- interaction ----------------------------------------------------- */
@@ -428,7 +452,7 @@ function init(){
   }
 
   canvas.addEventListener('wheel', (e) => {
-    if(!state.open || root.classList.contains('is-loading')) return;
+    if(!state.open || (root.classList.contains('is-loading') && !root.classList.contains('is-preview'))) return;
     e.preventDefault();
     const delta = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? view.availH : 1);
     const nextZoom = clamp(view.zoom * Math.exp(-clamp(delta, -240, 240) * 0.002), 1, ZOOM_MAX);
@@ -606,8 +630,10 @@ function init(){
 
   /* ---- loop ------------------------------------------------------------ */
   const clock = new THREE.Clock();
+  let raf = 0;
+  function startFrame(){ if(!raf && state.open) raf = requestAnimationFrame(frame); }
   function frame(){
-    requestAnimationFrame(frame);
+    raf = 0;
     if(!state.open) return;
     const dt = Math.min(clock.getDelta(), 0.05);
     const response = state.mode > 4.5 && state.mode < 5.5 ? 0.0006 : 0.00008;
@@ -617,9 +643,11 @@ function init(){
     mat.uniforms.uTime.value = clock.elapsedTime;
     if(mat.uniforms.uTex.value)
       mat.uniforms.uFade.value = lerp(mat.uniforms.uFade.value, 1, 1 - Math.pow(0.01, dt));
-    renderer.render(scene, camera);
+    if(!root.classList.contains('source-view') && mat.uniforms.uTex.value){
+      renderer.render(scene, camera);
+      startFrame();
+    }
   }
-  frame();
 
   /* ---- open / close ---------------------------------------------------- */
   function open(list, idx, opts){
@@ -648,6 +676,7 @@ function init(){
     root.classList.add('open');
     resize();
     show(idx);
+    startFrame();
     requestAnimationFrame(() => {
       root.classList.add('shown');
       ui.close.focus({ preventScroll:true });
@@ -658,6 +687,7 @@ function init(){
     if(!state.open) return;
     clearImageGesture();
     loadSeq++;
+    cancelAnimationFrame(raf); raf = 0;
     root.classList.remove('is-loading');
     root.removeAttribute('aria-busy');
     root.classList.remove('shown');

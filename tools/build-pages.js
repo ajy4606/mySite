@@ -4,12 +4,14 @@ const fs = require('fs');
 const path = require('path');
 const { pathToFileURL } = require('url');
 const ROOT = path.resolve(__dirname, '..');
+const { addResponsiveImages } = require('./responsive-images.js');
 const DOMAIN = 'https://ahnjaeyoung.com';
 const esc = value => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 (async () => {
   const { PAGES, canonicalPath, resolvePage, pageSchema } = await import(pathToFileURL(path.join(ROOT, 'assets/js/pages.mjs')));
   let source = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  source = addResponsiveImages(source);
   // Mechanical migration is idempotent. Old incoming hash URLs remain supported
   // by the router; outgoing links are useful even without JavaScript.
   source = source.replace(/href="#\/([^"]*)"/g, (all, tail) => {
@@ -49,7 +51,7 @@ const esc = value => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replac
       .replace(/(<meta property="og:description" content=")[^"]*"/, `$1${esc(page.description)}"`)
       .replace(/(<meta property="og:url" content=")[^"]*"/, `$1${url}"`)
       .replace(/(<meta property="og:image" content=")[^"]*"/, `$1${esc(new URL(image, DOMAIN + '/').href)}"`)
-      .replace(/<link rel="preload" as="image" href="[^"]+">/, `<link rel="preload" as="image" href="${image}">`);
+      .replace(/<link rel="preload" as="image" href="[^"]+">/, route === '/' ? `<link rel="preload" as="image" href="${image}">` : '');
   }
   let changed = 0;
   function output(file, text){

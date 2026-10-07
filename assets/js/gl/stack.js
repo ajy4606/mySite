@@ -8,7 +8,7 @@
    ============================================================ */
 
 import * as THREE from '../../vendor/three.module.min.js';
-import { VERT, FRAG_PLATE } from './shaders.js?v=20260915';
+import { VERT, FRAG_PLATE } from './shaders.js?v=20261007';
 
 const lerp = (a, b, t) => a + (b - a) * t;
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
@@ -489,8 +489,9 @@ export function createStack(opts){
   let running = true, visible = true, raf = 0;
 
   function frame(){
+    raf = 0;
+    if(!running || !visible || document.hidden) return;
     raf = requestAnimationFrame(frame);
-    if(!running || !visible) return;
 
     const dt = Math.min(clock.getDelta(), 0.05);
     const now = performance.now();
@@ -587,19 +588,19 @@ export function createStack(opts){
   ro.observe(host);
 
   const io = new IntersectionObserver(
-    (es) => { visible = es[0].isIntersecting; if(visible) cycleAt = performance.now(); },
+    (es) => { visible = es[0].isIntersecting; if(visible){ cycleAt = performance.now(); startFrame(); } },
     { threshold: 0 }
   );
   io.observe(host);
 
   document.addEventListener('visibilitychange', () => {
-    if(document.hidden) visible = false;
-    else { visible = true; cycleAt = performance.now(); }
+    if(!document.hidden){ cycleAt = performance.now(); startFrame(); }
   });
 
   layout();
   emit();
-  frame();
+  function startFrame(){ if(!raf && running && visible && !document.hidden) raf = requestAnimationFrame(frame); }
+  startFrame();
 
   return {
     goTo,
@@ -609,8 +610,8 @@ export function createStack(opts){
     /* re-run onChange without moving the stack — the caption is built from
        the current language, so switching KO/EN has to repaint it */
     refresh: () => emit(),
-    pause(){ running = false; },
-    resume(){ running = true; cycleAt = performance.now(); },
+    pause(){ running = false; cancelAnimationFrame(raf); raf = 0; },
+    resume(){ running = true; cycleAt = performance.now(); startFrame(); },
     destroy(){
       cancelAnimationFrame(raf);
       ro.disconnect(); io.disconnect();

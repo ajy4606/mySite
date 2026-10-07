@@ -23,5 +23,7 @@ $RECYCLE.BIN/
 
 # Local tool output
 node_modules/
+__pycache__/
+*.pyc
 *.log
 .netlify/

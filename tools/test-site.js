@@ -13,6 +13,18 @@ const read = file => fs.readFileSync(path.join(ROOT, file), 'utf8');
   // Zoom originals must only load after opening a viewer, even on retina screens.
   for(const image of html.matchAll(/<img\b[^>]*>/g)){
     assert.ok(!/\b(?:src|srcset)="[^"]*-full\.jpg/.test(image[0]), 'Zoom original used in page image');
+    const srcset = image[0].match(/\bsrcset="([^"]+)"/)?.[1];
+    if(srcset){
+      const widths = new Set();
+      for(const entry of srcset.split(',')){
+        const [src, width] = entry.trim().split(/\s+/);
+        assert.ok(fs.existsSync(path.join(ROOT, src.split('?')[0])), `Missing responsive image: ${src}`);
+        assert.ok(/^\d+w$/.test(width), `Invalid width descriptor: ${width}`);
+        assert.ok(!widths.has(width), `Duplicate responsive width: ${width}`);
+        widths.add(width);
+      }
+      assert.ok(image[0].includes(' sizes="'), 'Responsive image lacks layout sizes');
+    }
   }
   for(const [route, page] of Object.entries(PAGES)){
     const file = route === '/' ? 'index.html' : route.slice(1) + '/index.html';
@@ -56,5 +68,8 @@ const read = file => fs.readFileSync(path.join(ROOT, file), 'utf8');
   const viewer = read('assets/js/gl/delaminate.js');
   assert.ok(!viewer.includes('isMobileViewer()'), 'Touch handling still depends on viewport width');
   assert.ok(viewer.includes('role="slider"'));
+  const errorPage = read('404.html');
+  assert.ok(errorPage.includes('href="/#works"') && errorPage.includes('href="/"'), '404 recovery links missing');
+  assert.ok(errorPage.includes('content="noindex"'), '404 page should not be indexed');
   console.log(`PASS: ${Object.keys(PAGES).length} routes, legacy URLs, anchors, contact opt-out, ${plates(html).length} unchanged plates, viewer and color guards`);
 })().catch(error => { console.error(error); process.exitCode = 1; });

@@ -15,6 +15,8 @@ const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
 const PORT = Number(process.argv[2]) || 5173;
+// Optional local simulation of slow zoom downloads; production hosting is unaffected.
+const FULL_DELAY = Math.max(0, Number(process.env.SITE_PREVIEW_FULL_DELAY_MS) || 0);
 
 const TYPES = {
   '.html':'text/html; charset=utf-8',
@@ -55,8 +57,8 @@ http.createServer((req, res) => {
 
   fs.readFile(file, (err, buf) => {
     if (err) {
-      res.writeHead(404, { 'Content-Type':'text/plain; charset=utf-8' });
-      return res.end('404  ' + rel);
+      res.writeHead(404, { 'Content-Type':'text/html; charset=utf-8', 'Cache-Control':'no-store' });
+      return res.end(fs.readFileSync(path.join(ROOT, '404.html')));
     }
     res.writeHead(200, {
       'Content-Type': TYPES[path.extname(file).toLowerCase()] || 'application/octet-stream',
@@ -64,7 +66,8 @@ http.createServer((req, res) => {
       'Pragma': 'no-cache',
       'Expires': '0'
     });
-    res.end(buf);
+    if(FULL_DELAY && /-full\.jpg$/.test(rel)) setTimeout(() => res.end(buf), FULL_DELAY);
+    else res.end(buf);
   });
 }).listen(PORT, () => {
   console.log('');
