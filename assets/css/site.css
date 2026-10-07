@@ -776,7 +776,7 @@ h1[tabindex="-1"]:focus{outline:none}
   display:block;position:absolute;z-index:1;
   left:0;top:0;max-width:none;
   object-fit:fill;pointer-events:none;
-  transform-origin:50% 50%;will-change:transform;
+  /* Resize the decoded original for zoom; avoid a cached, scaled GPU raster. */
 }
 .dlm.is-loading:not(.is-preview) .dlm-source{opacity:0}
 .dlm.is-loading .dlm-effects{pointer-events:none;opacity:.5}

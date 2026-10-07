@@ -9,7 +9,7 @@
    ============================================================ */
 
 import * as THREE from '../../vendor/three.module.min.js';
-import { VERT, FRAG_DELAM } from './shaders.js?v=20261007';
+import { VERT, FRAG_DELAM } from './shaders.js?v=20261007-2';
 
 const lerp  = (a,b,t) => a + (b-a)*t;
 const clamp = (v,a,b) => Math.min(b, Math.max(a, v));
@@ -177,7 +177,14 @@ function init(){
     mesh.position.x = view.panX;
     /* DOM y grows down; the orthographic scene's y grows up. */
     mesh.position.y = view.baseY - view.panY;
-    source.style.transform = `translate3d(${view.panX.toFixed(2)}px,${view.panY.toFixed(2)}px,0) scale(${view.zoom.toFixed(4)})`;
+    /* Draw the original at the requested size. Promoting a small image with
+       will-change + scale can magnify its cached raster on iOS, even after
+       the 3000px file has arrived. Layout bounds also match the effect mesh. */
+    const w = view.baseW * view.zoom, h = view.baseH * view.zoom;
+    source.style.left = `${(view.centreX + view.panX - w / 2).toFixed(2)}px`;
+    source.style.top = `${(view.centreY + view.panY - h / 2).toFixed(2)}px`;
+    source.style.width = `${w.toFixed(2)}px`;
+    source.style.height = `${h.toFixed(2)}px`;
     root.classList.toggle('is-zoomed', view.zoom > 1.01);
     paintHud();
   }
@@ -233,15 +240,6 @@ function init(){
     view.availW = availW; view.availH = availH;
     view.centreX = W / 2;
     view.centreY = H / 2 - view.baseY;
-    {
-      /* Size the sharp DOM source to the exact WebGL plate bounds. An
-         object-fit box looked aligned only for some aspect ratios and jumped
-         when the scrubber swapped Source for the treated canvas. */
-      source.style.left = `${((W - w) / 2).toFixed(2)}px`;
-      source.style.top = `${(view.centreY - h / 2).toFixed(2)}px`;
-      source.style.width = `${w.toFixed(2)}px`;
-      source.style.height = `${h.toFixed(2)}px`;
-    }
     mat.uniforms.uPlanePx.value.set(w * dpr, h * dpr);
     applyView();
     syncSourceView();
@@ -298,6 +296,7 @@ function init(){
       state.idx = nextIdx;
       mat.uniforms.uTex.value = tex;
       mat.uniforms.uSeed.value = seedFor((item.src || String(nextIdx)).split('?')[0]);
+      const previewAspect = state.aspect;
       state.aspect = tex.image.width / tex.image.height;
       if(!previewShown) resetView(false);
       /* Phones open on the intact source image. Starting from the fully
@@ -316,7 +315,10 @@ function init(){
       syncSourceView();
       if(state.onShow) state.onShow(item);
       paintHud();
-      resize();
+      // Keep the fitted bounds exactly when replacing the same composition.
+      // Re-measuring controls here can move a zoomed preview during the swap.
+      if(!previewShown || Math.abs(state.aspect - previewAspect) > 0.001) resize();
+      else applyView();
       startFrame();
     };
 

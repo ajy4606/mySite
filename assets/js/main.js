@@ -4,7 +4,7 @@
 
 /* Bump this query whenever stack.js changes — assets are served with a
    one-hour cache and browsers will otherwise keep the old module. */
-import { PAGES, canonicalPath, resolvePage, pageSchema } from './pages.mjs?v=20261007';
+import { PAGES, canonicalPath, resolvePage, pageSchema } from './pages.mjs?v=20261007-2';
 
 const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -129,7 +129,7 @@ let heroProgress = () => {};
 
 function ensureHero(){
   if(!heroPromise){
-    heroPromise = import('./gl/stack.js?v=20261007').then(({ createStack }) => {
+    heroPromise = import('./gl/stack.js?v=20261007-2').then(({ createStack }) => {
       stack = initHero(createStack, heroProgress);
       if(currentView !== 'v-home') stack?.pause();
       return stack;
@@ -468,7 +468,7 @@ async function openViewer(el){
   let v = null;
   el.setAttribute('aria-busy', 'true');
   try{
-    viewerPromise ||= import('./gl/delaminate.js?v=20261007');
+    viewerPromise ||= import('./gl/delaminate.js?v=20261007-2');
     v = (await viewerPromise).viewer();
   }catch(error){ console.error('[viewer]', error); viewerPromise = null; }
   finally{ el.removeAttribute('aria-busy'); }
