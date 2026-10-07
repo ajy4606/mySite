@@ -47,7 +47,7 @@ def build():
         for candidate in candidates:
             unique[candidate["width"]] = candidate
         output[display] = sorted(unique.values(), key=lambda x: x["width"])
-    (ROOT / "assets/works/responsive.json").write_text(json.dumps(output, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    (ROOT / "assets/works/responsive.json").write_bytes((json.dumps(output, ensure_ascii=False, indent=2) + "\n").encode("utf-8"))
     print(f"Responsive image sets: {len(output)}")
 
 
