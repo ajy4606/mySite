@@ -1522,5 +1522,15 @@
       "src": "assets/works/installation/51.jpg",
       "width": 1200
     }
+  ],
+  "assets/works/installation/52.jpg": [
+    {
+      "src": "assets/works/installation/52-sm.jpg?v=bf06f7f6749c",
+      "width": 565
+    },
+    {
+      "src": "assets/works/installation/52.jpg?v=90df3d3f59b7",
+      "width": 850
+    }
   ]
 }

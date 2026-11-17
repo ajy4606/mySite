@@ -54,10 +54,14 @@ const read = file => fs.readFileSync(path.join(ROOT, file), 'utf8');
     assert.ok(!header.includes('class="project-summary"'), `${slug} ambiguous detail summary returned`);
     assert.ok(header.includes('class="context-links"'), `${slug} context links missing`);
   }
-  // The review did not authorize changing any artwork or installation order.
+  // Keep the original plate sequence when adding a new installation photograph.
   const before = execFileSync('git', ['show', '90351a8:index.html'], { cwd:ROOT, encoding:'utf8', maxBuffer:2e6 });
   const plates = text => [...text.matchAll(/<div class="strata"[^>]+>/g)].map(m => m[0]);
-  assert.deepEqual(plates(html), plates(before), 'Original plate sources, dimensions and order changed');
+  const installation = html.match(/<div class="inst" data-plates="installation">[\s\S]*?<div class="strata"[^>]+>/)?.[0];
+  assert.ok(installation?.endsWith('data-orig="51.jpg">'), 'Newest installation photograph must appear first');
+  const addedPlate = tag => tag.includes('data-orig="51.jpg"') && tag.includes('data-src="assets/works/installation/52.jpg?');
+  assert.equal(plates(html).filter(addedPlate).length, 1);
+  assert.deepEqual(plates(html).filter(tag => !addedPlate(tag)), plates(before), 'Original plate sources, dimensions and order changed');
   const css = read('assets/css/site.css');
   assert.ok(!/filter:grayscale\(\.(?:12|16|1|3)\)/.test(css), 'Unexpected thumbnail color filter');
   assert.ok(!/\.card:hover\s/.test(css), 'Grid hover treatment returned');
